@@ -1,0 +1,2180 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="面積魔術師：梯形" />
+  <title>面積魔術師：梯形</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --pink: #ff7eb6; --pink-deep: #ee4d93;
+      --sky: #5cc8ff; --sky-deep: #2a9adf;
+      --lemon: #ffe066; --lemon-deep: #e4b82a;
+      --lilac: #c9b6ff; --lilac-deep: #9b7af0;
+      --mint: #7eecc8; --mint-deep: #3cbc9a;
+      --ink: #3b2a55; --soft: #7a6588;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; }
+    body {
+      position: fixed; inset: 0;
+      font-family: "Noto Sans TC", "PingFang HK", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(255, 196, 150, 0.7) 0%, rgba(255, 196, 150, 0) 34%),
+        linear-gradient(122deg, rgba(255, 168, 132, 0.42) 0%, rgba(255, 168, 132, 0) 46%),
+        linear-gradient(210deg, rgba(255, 228, 186, 0.62) 12%, rgba(255, 228, 186, 0) 52%),
+        linear-gradient(162deg, #fff3e8 0%, #ffe0cc 38%, #ffd2be 70%, #fff6df 100%);
+      user-select: none;
+    }
+    .fun-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .deco { position: absolute; }
+    .deco svg { width: 100%; height: auto; aspect-ratio: 24 / 14; display: block; overflow: visible; }
+    .deco-lt { top: 4%; left: 11%; width: 34vmin; height: 22vmin; transform: rotate(-26deg); }
+    .deco-lbl { top: 36%; left: 1%; width: 29vmin; height: 19vmin; transform: rotate(17deg); }
+    .deco-lbr { top: 68%; left: 16%; width: 32vmin; height: 21vmin; transform: rotate(-9deg); }
+    .deco-rt { top: 6%; right: 3%; width: 33vmin; height: 21vmin; transform: rotate(11deg); }
+    .deco-rbl { top: 38%; right: 14%; width: 28vmin; height: 18vmin; transform: rotate(-21deg); }
+    .deco-rbr { top: 70%; right: 5%; width: 31vmin; height: 20vmin; transform: rotate(15deg); }
+    button, input { font-family: inherit; }
+    button { cursor: pointer; touch-action: manipulation; }
+    input { user-select: text; -webkit-user-select: text; }
+
+    @keyframes popIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+    @keyframes bounce { 0% { transform: scale(1); } 35% { transform: scale(0.88); } 70% { transform: scale(1.08); } 100% { transform: scale(1); } }
+    @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+    .bounce { animation: bounce 0.35s ease; }
+    .shake { animation: shake 0.4s ease; }
+
+    .app {
+      position: relative; z-index: 1;
+      height: 100%; width: 100%; overflow: hidden; display: flex;
+      padding: calc(6px + var(--safe-t)) calc(8px + var(--safe-r)) calc(6px + var(--safe-b)) calc(8px + var(--safe-l));
+    }
+    .screen {
+      display: none; width: min(1280px, 100%); margin: 0 auto;
+      height: 100%; min-height: 0; flex-direction: column; overflow: hidden;
+      animation: popIn 0.35s ease;
+    }
+    .screen.active { display: flex; }
+    .card {
+      background: rgba(255,255,255,0.92); border: 3px solid #fff; border-radius: 26px;
+      box-shadow: 0 14px 30px rgba(155, 122, 240, 0.18); min-height: 0; color: var(--ink);
+    }
+    .candy {
+      border: 0; border-radius: 999px; font-weight: 900; padding: 10px 18px;
+      transition: transform 0.12s ease, filter 0.12s ease;
+    }
+    .candy:hover { filter: brightness(1.05); }
+    .candy:active { transform: translateY(4px) scale(0.96); box-shadow: 0 2px 0 rgba(0,0,0,0.18) !important; animation: bounce 0.3s ease; }
+    .candy:disabled { filter: saturate(0.55); pointer-events: none; }
+    .sky { background: var(--sky); color: #0a3a5c; box-shadow: 0 6px 0 var(--sky-deep); }
+    .pink { background: var(--pink); color: #fff; box-shadow: 0 6px 0 var(--pink-deep); }
+    .lemon { background: var(--lemon); color: var(--ink); box-shadow: 0 6px 0 var(--lemon-deep); }
+    .mint { background: var(--mint); color: #165f4c; box-shadow: 0 6px 0 var(--mint-deep); }
+    .lilac { background: var(--lilac); color: #fff; box-shadow: 0 6px 0 var(--lilac-deep); }
+    .ghost { background: #fff; color: var(--soft); box-shadow: 0 5px 0 #ecd6de; }
+
+    #screen-login { align-items: center; justify-content: center; }
+    .login { width: min(400px, 100%); padding: 22px 18px 16px; text-align: center; }
+    .mascot {
+      width: 72px; height: 72px; margin: 0 auto 6px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 36px; background: #fff;
+      box-shadow: 0 8px 0 #ffc2e0;
+      animation: floaty 2.8s ease-in-out infinite;
+    }
+    .mascot svg { width: 44px; height: auto; display: block; }
+    .title {
+      font-family: "Fredoka", "Noto Sans TC", sans-serif;
+      font-size: clamp(20px, 4.4vh, 30px); font-weight: 900; letter-spacing: 0.03em;
+      margin-bottom: 14px; line-height: 1.3; white-space: nowrap;
+      background: none; border: 0; box-shadow: none; padding: 0; text-shadow: none;
+    }
+    .title span:nth-child(odd) { color: var(--pink-deep); }
+    .title span:nth-child(even) { color: var(--lilac-deep); }
+    .field { text-align: left; margin-bottom: 10px; }
+    .field label { display: block; font-weight: 900; font-size: 15px; margin-bottom: 4px; }
+    .field input {
+      width: 100%; border: 3px solid #ffe1ec; border-radius: 16px;
+      padding: 10px 12px; font-size: 18px; font-weight: 800; outline: none; background: #fff;
+    }
+    .field input:focus { border-color: var(--pink); }
+    .start { width: 100%; font-size: 22px; padding: 12px; margin: 6px 0 10px; }
+    .teacher-btn {
+      width: 64px; height: 64px; border-radius: 50%; font-size: 13px; line-height: 1.15;
+      padding: 0; margin: 4px auto 0; display: grid; place-items: center;
+    }
+    .login-acts {
+      display: flex; flex-wrap: nowrap; justify-content: center; align-items: center;
+      gap: 22px; margin-top: 4px;
+    }
+    .login-acts .teacher-btn {
+      margin: 0; padding: 0; width: 64px; height: 64px; min-width: 64px;
+      flex: 0 0 64px; font-size: 13px; line-height: 1.2;
+    }
+    .rank-note {
+      flex-shrink: 0; font-family: "Fredoka", "Noto Sans TC", sans-serif;
+      font-weight: 900; font-size: clamp(24px, 3.6vh, 32px); line-height: 1.3;
+      color: var(--pink-deep); text-align: center; letter-spacing: 0.04em;
+    }
+    tr.r1 td { background: #fff6c9; }
+    tr.r2 td { background: #eef2f7; }
+    tr.r3 td { background: #f8ead8; }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0; margin-bottom: 4px; overflow: visible; }
+    .pill {
+      background: #fff; color: var(--ink); border-radius: 999px; padding: 6px 12px;
+      font-weight: 800; font-size: 16px; box-shadow: 0 4px 0 #f0d7e2; white-space: nowrap;
+    }
+    .timer-wrap { position: relative; flex-shrink: 0; }
+    .timer { font-variant-numeric: tabular-nums; background: #fff4cc; min-width: 92px; text-align: center; }
+    .timer.low, .timer.hit { background: #ffd0d8; color: #b42318; }
+    .timer.hit { animation: shake 0.4s ease; }
+    .time-hit {
+      position: absolute; left: 50%; top: 50%; z-index: 3;
+      font-weight: 900; font-size: 16px; color: #b42318;
+      pointer-events: none; opacity: 0; white-space: nowrap;
+      text-shadow: 0 1px 0 #fff, 0 0 8px #fff;
+    }
+    .time-hit.show { animation: timeHitPop 0.7s ease; }
+    @keyframes timeHitPop {
+      0% { opacity: 0; transform: translate(-50%, -40%) scale(0.8); }
+      22% { opacity: 1; transform: translate(-50%, -110%) scale(1.12); }
+      100% { opacity: 0; transform: translate(-50%, -160%) scale(0.96); }
+    }
+    .tiny { padding: 6px 12px; font-size: 13px; }
+
+    .play { flex: 1; min-height: 0; overflow: hidden; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .task-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-shrink: 0; }
+    .task-h h2 { font-size: clamp(18px, 2.8vh, 24px); line-height: 1.3; }
+    .task-h p { font-size: 16px; font-weight: 900; color: var(--soft); white-space: nowrap; }
+    .hintbar {
+      flex-shrink: 0; font-size: clamp(18px, 3vh, 22px); font-weight: 900; color: #5a4a72;
+      background: #e8fff6; border-radius: 12px; padding: 8px 12px; text-align: center;
+      line-height: 1.4; white-space: normal; overflow: hidden;
+    }
+    .board {
+      flex: 1; min-height: 0; position: relative;
+      display: flex; align-items: stretch; justify-content: center;
+      background: linear-gradient(180deg, #fff, #effff8);
+      border-radius: 22px; overflow: hidden;
+      box-shadow: inset 0 0 0 2px rgba(126, 236, 200, 0.45);
+      touch-action: none;
+    }
+    .board::before, .board::after {
+      content: ""; position: absolute; width: 54px; height: 14px; z-index: 2; pointer-events: none;
+      background: #ffe066;
+      box-shadow: 0 2px 0 rgba(228, 184, 42, 0.35);
+    }
+    .board::before { top: 10px; left: 4px; transform: rotate(-45deg); }
+    .board::after { top: 12px; right: 4px; transform: rotate(45deg); }
+    #scene { width: 100%; height: 100%; display: block; touch-action: none; position: relative; z-index: 0; }
+
+    .choice-row { display: flex; gap: 8px; flex-shrink: 0; align-items: stretch; }
+    .choice-row .candy {
+      flex: 1; font-size: clamp(16px, 2.5vh, 20px); padding: 12px 8px;
+      display: inline-flex; align-items: center; justify-content: center;
+      text-align: center; line-height: 1.2;
+    }
+    .opt-col { display: none; flex-direction: column; gap: 8px; flex-shrink: 0; }
+    .opt-col.show { display: flex; }
+    .opt-col .candy { width: 100%; text-align: center; font-size: clamp(17px, 2.6vh, 22px); padding: 12px 8px; }
+
+    .toast {
+      display: none; flex-shrink: 0; border-radius: 16px; padding: 6px 12px;
+      font-weight: 900; font-size: 16px; text-align: center; line-height: 1.3;
+      letter-spacing: 0.02em;
+    }
+    .toast.show { display: block; }
+    .toast.good { background: #e4faf2; border: 2px solid #7eecc8; color: #165f4c; }
+    .toast.bad { background: #fff1f1; border: 2px solid #ffb4b4; color: #b42318; }
+
+    .report {
+      position: fixed; inset: 0; background: rgba(59, 42, 85, 0.42);
+      display: none; place-items: center; z-index: 25; padding: 16px;
+    }
+    .report.show { display: grid; }
+    .report-card {
+      width: min(520px, 100%); background: #fff; border-radius: 32px;
+      padding: 22px 20px 18px; text-align: center; border: 4px solid #fff;
+      box-shadow: 0 18px 40px rgba(126, 236, 200, 0.28); animation: popIn 0.4s ease; color: var(--ink);
+    }
+    .report-card h2 { font-size: clamp(22px, 3.4vh, 28px); margin: 8px 0 10px; }
+    .report-card p { font-weight: 800; line-height: 1.55; margin: 8px 0; font-size: 16px; }
+    .tip {
+      background: #e8fff6; border-radius: 18px; padding: 12px 14px; margin: 12px 0 16px;
+      font-weight: 800; line-height: 1.6; text-align: left; white-space: pre-wrap;
+    }
+
+    .dash-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-shrink: 0; margin-bottom: 8px; }
+    .dash-h h1 { font-family: "Fredoka", "Noto Sans TC", sans-serif; font-size: clamp(20px, 3vh, 28px); color: var(--ink); }
+    .dash-h .acts { display: flex; gap: 8px; margin: 0; }
+    .dash { flex: 1; min-height: 0; overflow: hidden; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex-shrink: 0; }
+    .stat { border-radius: 16px; padding: 10px; }
+    .stat b { display: block; font-size: 12px; opacity: 0.8; }
+    .stat strong { font-size: clamp(16px, 2.6vh, 24px); display: block; line-height: 1.2; }
+    .s1 { background: #d9f8ee; } .s2 { background: #ffe1ea; } .s3 { background: #efe6ff; }
+    .tools { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 8px; flex-wrap: wrap; }
+    .tools select, .tools button.tiny { border: 2px solid #ffe1ec; border-radius: 12px; padding: 4px 8px; font-weight: 800; background: #fff; }
+    .tool-filters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .dash-src { font-size: 12px; font-weight: 800; color: var(--soft); }
+    .dash-count { font-size: 12px; font-weight: 800; color: var(--soft); }
+    .records { flex: 1; min-height: 0; overflow: auto; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(16,36,63,0.08); font-size: 12px; }
+    th { background: #e8fff6; position: sticky; top: 0; z-index: 2; white-space: nowrap; }
+    th.col-h { padding-right: 4px; }
+    .col-sort { border: 0; background: transparent; font: inherit; font-weight: 900; cursor: pointer; padding: 0; }
+    th.sorted .col-sort { color: #3cbc9a; }
+    .filter-btn {
+      border: 0; background: #d9f8ee; color: var(--ink); cursor: pointer;
+      border-radius: 8px; width: 22px; height: 22px; margin-left: 4px;
+      font-size: 12px; font-weight: 900; line-height: 1; vertical-align: middle;
+    }
+    .filter-btn.on { background: var(--mint-deep); color: #fff; }
+    .score-cell { font-variant-numeric: tabular-nums; font-weight: 900; text-align: center; }
+    th.score-h, td.rank-cell { text-align: center; font-variant-numeric: tabular-nums; }
+    tr.hi .score-cell { color: #1a8f7c; }
+    tr.lo .score-cell { color: #b42318; }
+    .diag-cell { white-space: pre-line; }
+    .empty { text-align: center; padding: 20px; font-weight: 800; color: var(--soft); }
+    .filter-menu {
+      position: fixed; z-index: 30; width: min(280px, calc(100vw - 16px));
+      background: #fff; border-radius: 18px; padding: 10px;
+      box-shadow: 0 16px 36px rgba(59,42,85,0.24); border: 2px solid #ffe1ec;
+      display: none; flex-direction: column; gap: 8px; max-height: min(420px, 70vh);
+    }
+    .filter-menu.show { display: flex; }
+    .filter-menu .fm-title { font-weight: 900; font-size: 14px; text-align: left; }
+    .filter-menu .fm-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-menu .fm-acts button {
+      border: 0; border-radius: 999px; font-weight: 900; padding: 6px 10px; font-size: 12px;
+      background: #e8fff6; color: var(--ink); cursor: pointer;
+    }
+    .filter-menu input[type="search"] {
+      width: 100%; border: 2px solid #ffe1ec; border-radius: 12px;
+      padding: 6px 8px; font-weight: 800; font-size: 14px;
+    }
+    .filter-menu .opts { overflow: auto; text-align: left; flex: 1; min-height: 80px; }
+    .filter-menu label { display: flex; gap: 8px; align-items: flex-start; padding: 5px 2px; font-weight: 800; font-size: 13px; cursor: pointer; }
+    .filter-menu label input { margin-top: 2px; }
+
+    .modal { position: fixed; inset: 0; background: rgba(59,42,85,0.4); display: none; place-items: center; z-index: 20; padding: 16px; }
+    .modal.show { display: grid; }
+    .modal-card { width: min(360px, 100%); background: #fff; border-radius: 24px; padding: 18px; text-align: center; color: var(--ink); }
+    .modal-card input {
+      width: 100%; border: 3px solid #ffe1ec; border-radius: 14px;
+      padding: 10px; font-size: 20px; font-weight: 800; text-align: center; margin: 10px 0;
+    }
+    canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+
+    @media (max-height: 720px) {
+      .mascot { width: 56px; height: 56px; font-size: 26px; }
+      .mascot svg { width: 34px; }
+      .teacher-btn, .login-acts .teacher-btn { width: 52px; height: 52px; min-width: 52px; flex-basis: 52px; font-size: 12px; }
+      .choice-row .candy { padding: 10px 6px; font-size: 16px; }
+      .hintbar { font-size: 17px; padding: 6px 10px; }
+      .opt-col .candy { padding: 8px 6px; font-size: 16px; }
+    }
+    @media print {
+      html, body, .app, .screen.active { position: static; height: auto; overflow: visible; }
+      .no-print, canvas, .fun-bg, .report, .modal, .filter-menu, .filter-btn { display: none !important; }
+      .records { overflow: visible; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <div class="fun-bg" aria-hidden="true">
+    <div class="deco deco-lt">
+      <svg viewBox="0 0 24 14" preserveAspectRatio="xMidYMid meet" focusable="false"><polygon points="5,1 19,1 23,13 1,13" fill="#ff8a4a" fill-opacity="0.65"/></svg>
+    </div>
+    <div class="deco deco-lbl">
+      <svg viewBox="0 0 24 14" preserveAspectRatio="xMidYMid meet" focusable="false"><polygon points="2,1 15,1 22,13 2,13" fill="#ff6b6b" fill-opacity="0.6"/></svg>
+    </div>
+    <div class="deco deco-lbr">
+      <svg viewBox="0 0 24 14" preserveAspectRatio="xMidYMid meet" focusable="false"><polygon points="6,1 22,1 22,13 2,13" fill="#ffc14d" fill-opacity="0.65"/></svg>
+    </div>
+    <div class="deco deco-rt">
+      <svg viewBox="0 0 24 14" preserveAspectRatio="xMidYMid meet" focusable="false"><polygon points="4,1 18,2 22,13 1,12" fill="#f07838" fill-opacity="0.6"/></svg>
+    </div>
+    <div class="deco deco-rbl">
+      <svg viewBox="0 0 24 14" preserveAspectRatio="xMidYMid meet" focusable="false"><polygon points="3,1 16,1 22,13 7,13" fill="#ff9a62" fill-opacity="0.65"/></svg>
+    </div>
+    <div class="deco deco-rbr">
+      <svg viewBox="0 0 24 14" preserveAspectRatio="xMidYMid meet" focusable="false"><polygon points="2,2 20,1 23,13 5,13" fill="#e85d4c" fill-opacity="0.6"/></svg>
+    </div>
+  </div>
+  <canvas id="confetti"></canvas>
+  <div class="app">
+    <section id="screen-login" class="screen active">
+      <div class="card login">
+        <div class="mascot" aria-hidden="true">
+          <svg viewBox="0 0 24 16" focusable="false">
+            <defs>
+              <linearGradient id="mascotTrap" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#ffc48a"/>
+                <stop offset="1" stop-color="#ff7a59"/>
+              </linearGradient>
+            </defs>
+            <polygon points="6,2 18,2 22,14 2,14" fill="url(#mascotTrap)" stroke="#3b2a55" stroke-width="1.2" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h1 class="title" id="titleWave"></h1>
+        <div class="field">
+          <label for="classId">班別</label>
+          <input id="classId" maxlength="8" placeholder="5A" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="studentId">學號</label>
+          <input id="studentId" maxlength="6" placeholder="01" inputmode="numeric" autocomplete="off" />
+        </div>
+        <button class="candy pink start" id="startBtn">開始任務</button>
+        <div class="login-acts">
+          <button class="candy mint teacher-btn" id="rankBtn">學生<br>排行</button>
+          <button class="candy lilac teacher-btn" id="teacherBtn">老師<br>後台</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-game" class="screen">
+      <div class="topbar">
+        <div class="pill" id="playerPill">5A 01</div>
+        <div class="pill" id="qPill">第 1 題</div>
+        <div class="timer-wrap">
+          <div class="pill timer" id="timer">⏱️ 03:00</div>
+          <span class="time-hit" id="timeHit" aria-hidden="true">−5秒</span>
+        </div>
+        <button class="candy ghost tiny no-print" id="backLoginBtn">主頁</button>
+      </div>
+      <div class="card play">
+        <div class="task-h">
+          <h2 id="taskTitle">任務一：中線分割</h2>
+          <p id="taskKind">直角梯形</p>
+        </div>
+        <div class="hintbar" id="hintBar">1. 沿中線剪下　2. 旋轉成兩個相同的梯形</div>
+        <div class="board" id="board">
+          <canvas id="scene"></canvas>
+        </div>
+        <div class="toast" id="feedToast"></div>
+        <div class="choice-row" id="phase1Acts">
+          <button class="candy lemon" id="btnCut">✂️ 沿中線剪下</button>
+          <button class="candy mint" id="btnSpin" disabled>🔄 旋轉梯形</button>
+        </div>
+        <div class="opt-col" id="phase2Acts"></div>
+      </div>
+    </section>
+
+    <section id="screen-dash" class="screen">
+      <div class="dash-h">
+        <h1>老師後台</h1>
+        <div class="acts no-print">
+          <button class="candy lemon tiny" id="printBtn">列印</button>
+          <button class="candy sky tiny" id="refreshDashBtn">重新整理</button>
+          <button class="candy ghost tiny" id="dashBackBtn">返回</button>
+        </div>
+      </div>
+      <div class="card dash">
+        <div class="stats" id="analysisCards"></div>
+        <div class="tools">
+          <strong>全班紀錄 <small id="dashSource" class="dash-src"></small></strong>
+          <div class="tool-filters">
+            <select id="classFilter" aria-label="班別"></select>
+            <span class="dash-count" id="dashCount"></span>
+            <button type="button" class="tiny" id="clearFiltersBtn">清除篩選</button>
+          </div>
+        </div>
+        <div class="records" id="studentRecords"></div>
+      </div>
+    </section>
+
+    <section id="screen-rank" class="screen">
+      <div class="dash-h">
+        <h1>學生排行</h1>
+        <div class="acts no-print">
+          <button class="candy sky tiny" id="rankRefreshBtn">重新整理</button>
+          <button class="candy ghost tiny" id="rankBackBtn">返回</button>
+        </div>
+      </div>
+      <div class="card dash">
+        <p class="rank-note">✨ 數學之星 ✨</p>
+        <div class="records" id="rankRecords"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="report" id="reportModal">
+    <div class="report-card">
+      <div class="mascot">🏆</div>
+      <h2>成績診斷卡</h2>
+      <p id="reportScore"></p>
+      <div class="tip" id="reportTip"></div>
+      <button class="candy pink" id="reportBackBtn">完成</button>
+    </div>
+  </div>
+
+  <div id="dashFilterMenu" class="filter-menu"></div>
+
+  <div class="modal" id="pinModal">
+    <div class="modal-card">
+      <h3>老師後台</h3>
+      <input id="pinInput" type="password" maxlength="8" inputmode="numeric" autocomplete="off" />
+      <div class="choice-row">
+        <button class="candy ghost" id="pinCancel">取消</button>
+        <button class="candy lilac" id="pinOk">確認</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyGGhtjy7bKzw9M-divK5BZYL0mGcHJwcNoV_xv8VAUalMu_U9ptg8A8wIRQ8cpvQxv/exec";
+      const GAME_ID = "p5ma-ch6";
+      const CHAPTER = "p5ma-ch6";
+      const STORE_KEY = "p5ma-ch6-v1";
+      const TEACHER_PIN = "2246";
+      const GAME_SECS = 180;
+      const PENALTY_SECS = 5;
+      const GRID = 36;
+      const TITLE = "面積魔術師：梯形";
+
+      const state = {
+        classId: "", studentId: "",
+        qIndex: 1, remain: GAME_SECS, ended: false, busy: false,
+        done: 0, qTimes: [], qStart: 0, sheetSent: false,
+        missHalf: 0, missSlant: 0, missUnit: 0, missCut: 0, missDrop: 0, missWrong: 0,
+        q: null, cssW: 0, cssH: 0, tags: [], animId: 0, hoverTag: "", stage: "1a"
+      };
+
+      let audioCtx = null, countId = null, sceneCtx = null;
+      const $ = (id) => document.getElementById(id);
+      const screens = { login: $("screen-login"), game: $("screen-game"), dash: $("screen-dash"), rank: $("screen-rank") };
+      const scene = $("scene");
+
+      function showScreen(name) {
+        Object.keys(screens).forEach((key) => screens[key].classList.toggle("active", key === name));
+        if (name !== "game") stopCountdown();
+        if (name === "game") requestAnimationFrame(() => { layoutCanvas(); draw(); });
+      }
+      function bounce(el) {
+        if (!el) return;
+        el.classList.remove("bounce");
+        void el.offsetWidth;
+        el.classList.add("bounce");
+      }
+      $("titleWave").innerHTML = [...TITLE].map((ch, i) =>
+        `<span style="display:inline-block;animation:floaty 2.4s ${i * 0.08}s ease-in-out infinite">${ch}</span>`
+      ).join("");
+
+      function loadStore() {
+        try {
+          const raw = localStorage.getItem(STORE_KEY);
+          if (!raw) return { students: {}, logs: [] };
+          const data = JSON.parse(raw);
+          return { students: data.students || {}, logs: Array.isArray(data.logs) ? data.logs : [] };
+        } catch (e) { return { students: {}, logs: [] }; }
+      }
+      function saveStore(data) { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+      function normalizeId(id) {
+        const raw = String(id || "").trim();
+        return /^\d+$/.test(raw) ? raw.padStart(2, "0") : raw;
+      }
+      function studentKey(c, s) { return `${c}__${normalizeId(s)}`; }
+      function nowText() {
+        const d = new Date();
+        const p = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+      }
+      function ensureStudent() {
+        const db = loadStore();
+        const key = studentKey(state.classId, state.studentId);
+        if (!db.students[key]) {
+          db.students[key] = { classId: state.classId, studentId: normalizeId(state.studentId) };
+          saveStore(db);
+        }
+        return key;
+      }
+      function diagnose() {
+        const items = [];
+        if (state.missHalf) items.push(`忘記除以2（${state.missHalf}次）`);
+        if (state.missSlant) items.push(`誤用斜邊（${state.missSlant}次）`);
+        if (state.missWrong) items.push(`誤用不對應的高（${state.missWrong}次）`);
+        if (state.missUnit) items.push(`單位漏平方（${state.missUnit}次）`);
+        if (state.missCut) items.push(`未沿中線剪下（${state.missCut}次）`);
+        if (state.missDrop) items.push(`誤刪上底、下底或高（${state.missDrop}次）`);
+        if (!items.length) {
+          return { short: "零失誤", sheet: "零失誤", tip: "零失誤\n🌟 做得好啊" };
+        }
+        const bullets = items.map((s) => "• " + s).join("\n");
+        return { short: bullets, sheet: bullets, tip: bullets + "\n💪 再接再厲吧" };
+      }
+      function sheetConfigured() {
+        return /^https:\/\/script\.google\.com\/macros\/s\/(?!YOUR_SCRIPT_ID\b)[^/]+\/exec\/?$/.test(GOOGLE_SHEET_URL);
+      }
+      function sendToGoogleSheet(d) {
+        if (state.sheetSent || !sheetConfigured()) return;
+        state.sheetSent = true;
+        const avg = state.done ? Math.round(state.qTimes.reduce((x, y) => x + y, 0) / state.done) : 0;
+        const payload = {
+          game: GAME_ID,
+          chapter: CHAPTER,
+          student: `${state.classId} (${normalizeId(state.studentId)})`,
+          score: state.done,
+          avgTime: `${avg}秒`,
+          diagnostic: d.sheet
+        };
+        try {
+          fetch(GOOGLE_SHEET_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+          }).catch(function () {});
+        } catch (err) {}
+      }
+
+      let sheetLogsCache = null, dashSeq = 0, dashAllLogs = [], rankSeq = 0;
+      let dashClass = "ALL";
+      let dashSort = { col: "student", dir: "asc" };
+      let dashFilters = {}, dashMenuCol = "";
+      const DASH_COLS = [
+        { key: "student", label: "班別學號", numeric: false },
+        { key: "score", label: "答對題數", numeric: true },
+        { key: "avg", label: "平均用時(秒)", numeric: true },
+        { key: "diagnosis", label: "診斷", numeric: false },
+        { key: "time", label: "時間", numeric: false }
+      ];
+      function parseSheetStudent(s) {
+        const m = String(s || "").match(/^(.+?)\s*\(([^)]+)\)/);
+        if (m) return { classId: m[1].trim(), studentId: normalizeId(m[2].trim()) };
+        return { classId: "", studentId: String(s || "").trim() };
+      }
+      function parseAvgSec(s) {
+        const m = String(s || "").match(/(\d+)/);
+        return m ? Number(m[1]) : 0;
+      }
+      function countErr(diagnostic, label) {
+        const m = String(diagnostic || "").match(new RegExp(label + "（(\\d+)次）"));
+        if (m) return Number(m[1]) || 0;
+        return new RegExp(label).test(diagnostic) ? 1 : 0;
+      }
+      function rowsToLogs(rows) {
+        return (rows || []).map((r) => {
+          const who = parseSheetStudent(r.student);
+          const diagnostic = String(r.diagnostic || "");
+          return {
+            classId: who.classId, studentId: who.studentId,
+            done: Number(r.score) || 0, avgSec: parseAvgSec(r.avgTime),
+            diagnosis: diagnostic,
+            halfErr: countErr(diagnostic, "忘記除以2"),
+            slantErr: countErr(diagnostic, "誤用斜邊"),
+            wrongErr: countErr(diagnostic, "誤用不對應的高"),
+            time: r.time || "", game: r.game || r.chapter || ""
+          };
+        }).filter((e) => e.studentId || e.classId);
+      }
+      function jsonpSheet(url) {
+        return new Promise((resolve, reject) => {
+          const cb = "p5ch6Dash" + Date.now();
+          const s = document.createElement("script");
+          const timer = setTimeout(() => { cleanup(); reject(new Error("timeout")); }, 15000);
+          function cleanup() {
+            clearTimeout(timer);
+            try { delete window[cb]; } catch (err) { window[cb] = undefined; }
+            if (s.parentNode) s.parentNode.removeChild(s);
+          }
+          window[cb] = function (data) { cleanup(); resolve(data); };
+          s.onerror = function () { cleanup(); reject(new Error("script")); };
+          s.src = url + (url.indexOf("?") >= 0 ? "&" : "?") + "callback=" + cb;
+          document.body.appendChild(s);
+        });
+      }
+      async function loadSheetLogs(force) {
+        if (sheetLogsCache && !force) return sheetLogsCache;
+        if (!sheetConfigured()) throw new Error("no-url");
+        const url = GOOGLE_SHEET_URL + "?game=" + encodeURIComponent(GAME_ID);
+        let data = null;
+        try {
+          const res = await fetch(url, { method: "GET" });
+          if (!res.ok) throw new Error("http");
+          data = await res.json();
+        } catch (err) { data = await jsonpSheet(url); }
+        if (!data || !data.ok) throw new Error("bad");
+        sheetLogsCache = rowsToLogs(data.rows);
+        return sheetLogsCache;
+      }
+      function saveSession() {
+        const db = loadStore();
+        ensureStudent();
+        const avg = state.done ? Math.round(state.qTimes.reduce((a, b) => a + b, 0) / state.done) : 0;
+        const d = diagnose();
+        db.logs.push({
+          classId: state.classId, studentId: normalizeId(state.studentId),
+          done: state.done, avgSec: avg, diagnosis: d.short,
+          halfErr: state.missHalf, slantErr: state.missSlant, wrongErr: state.missWrong, time: nowText()
+        });
+        saveStore(db);
+        return d;
+      }
+
+      function unlockAudio() {
+        if (!audioCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        }
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      }
+      function tone(freq, dur, type, gain) {
+        if (!audioCtx) return;
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = type || "sine"; o.frequency.value = freq; g.gain.value = gain || 0.05;
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start();
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        o.stop(audioCtx.currentTime + dur);
+      }
+      function sfx(kind) {
+        unlockAudio();
+        if (kind === "ok") {
+          tone(523, 0.1, "triangle");
+          setTimeout(() => tone(659, 0.1, "triangle"), 80);
+          setTimeout(() => tone(784, 0.16, "triangle"), 160);
+        } else if (kind === "snap") tone(720, 0.06, "triangle", 0.03);
+        else if (kind === "bad") tone(180, 0.2, "sawtooth", 0.04);
+        else if (kind === "win") [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.14, "triangle"), i * 100));
+      }
+      function renderTimer() {
+        const s = Math.max(0, state.remain);
+        $("timer").textContent = `⏱️ ${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+        $("timer").classList.toggle("low", s <= 15);
+      }
+      function applyPenalty() {
+        if (state.ended) return;
+        state.remain = Math.max(0, state.remain - PENALTY_SECS);
+        renderTimer();
+        const timer = $("timer"), hit = $("timeHit");
+        if (timer) {
+          timer.classList.remove("hit");
+          void timer.offsetWidth;
+          timer.classList.add("hit");
+          setTimeout(() => timer.classList.remove("hit"), 420);
+        }
+        if (hit) {
+          hit.classList.remove("show");
+          void hit.offsetWidth;
+          hit.classList.add("show");
+          setTimeout(() => hit.classList.remove("show"), 720);
+        }
+        if (state.remain <= 0) endSession();
+      }
+      function stopCountdown() { clearInterval(countId); countId = null; }
+      function startCountdown() {
+        stopCountdown();
+        state.remain = GAME_SECS; state.ended = false; renderTimer();
+        countId = setInterval(() => {
+          if (state.ended) return;
+          state.remain -= 1; renderTimer();
+          if (state.remain <= 0) endSession();
+        }, 1000);
+      }
+      function endSession() {
+        if (state.ended) return;
+        cancelAnim();
+        state.ended = true; state.remain = 0; renderTimer(); stopCountdown();
+        const d = saveSession();
+        sendToGoogleSheet(d);
+        $("reportScore").textContent = `3 分鐘內答對 ${state.done} 題`;
+        $("reportTip").textContent = d.tip;
+        $("reportModal").classList.add("show");
+        burstConfetti(180); sfx("win");
+      }
+
+      function rand(a, b) { return a + Math.random() * (b - a); }
+      function rint(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+      function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+      function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+      }
+      function add(a, b) { return { x: a.x + b.x, y: a.y + b.y }; }
+      function sub(a, b) { return { x: a.x - b.x, y: a.y - b.y }; }
+      function mul(a, s) { return { x: a.x * s, y: a.y * s }; }
+      function dot(a, b) { return a.x * b.x + a.y * b.y; }
+      function len(a) { return Math.hypot(a.x, a.y); }
+      function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+      function norm(a) { const L = len(a) || 1; return { x: a.x / L, y: a.y / L }; }
+      function lerp(a, b, t) { return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }; }
+      function rot(a, ang) {
+        const c = Math.cos(ang), s = Math.sin(ang);
+        return { x: a.x * c - a.y * s, y: a.x * s + a.y * c };
+      }
+      function centroid(pts) {
+        let x = 0, y = 0;
+        pts.forEach((p) => { x += p.x; y += p.y; });
+        return { x: x / pts.length, y: y / pts.length };
+      }
+      function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+
+      const PT_KEYS = ["A", "B", "C", "D", "foot", "baseA", "baseB", "highP", "cutA", "cutB", "hypotA", "hypotB", "t1TopA", "t1TopB", "t1BotA", "t1BotB", "t1High", "t1Foot", "t2TopA", "t2TopB", "t2BotA", "t2BotB", "t2High", "t2Foot", "topA", "topB", "botA", "botB", "slantA", "slantB", "whFoot", "whEnd"];
+      function hOnOverlap(topL, topR, botL, botR) {
+        const x0 = Math.max(Math.min(topL.x, topR.x), Math.min(botL.x, botR.x));
+        const x1 = Math.min(Math.max(topL.x, topR.x), Math.max(botL.x, botR.x));
+        if (x1 - x0 < 1) return null;
+        let x = Math.round((x0 + x1) / 2);
+        if (x < x0) x = Math.ceil(x0);
+        if (x > x1) x = Math.floor(x1);
+        return { foot: { x: x, y: botL.y }, highP: { x: x, y: topL.y } };
+      }
+      function hOnLeg(legA, legB, yBot, yTop) {
+        if (Math.abs(legA.x - legB.x) > 0.01) return null;
+        return { foot: { x: legA.x, y: yBot }, highP: { x: legA.x, y: yTop } };
+      }
+      function makeCutPara(base, height, skew, mode) {
+        if ((base + skew) % 2 !== 0 || skew <= 0 || skew >= base) return null;
+        const A = { x: 0, y: 0 }, B = { x: base, y: 0 };
+        const D = { x: skew, y: height }, C = { x: base + skew, y: height };
+        const cx = (base + skew) / 2;
+        const cutBot = mode === "vert" ? { x: cx, y: 0 } : { x: cx + 1, y: 0 };
+        const cutTop = mode === "vert" ? { x: cx, y: height } : { x: cx - 1, y: height };
+        if (!(cutBot.x > 0 && cutBot.x < base)) return null;
+        if (!(cutTop.x > skew && cutTop.x < base + skew)) return null;
+        const h1 = hOnLeg(cutBot, cutTop, 0, height) || hOnOverlap(D, cutTop, A, cutBot);
+        const h2 = hOnLeg(cutBot, cutTop, 0, height) || hOnOverlap(cutTop, C, cutBot, B);
+        if (!h1 || !h2) return null;
+        const foot = { x: skew, y: 0 };
+        return {
+          kind: mode, A, B, C, D, foot,
+          verts: [A, B, C, D],
+          trap1: [A, cutBot, cutTop, D],
+          trap2: [cutBot, B, C, cutTop],
+          baseA: A, baseB: B, highP: D, cutA: cutTop, cutB: cutBot,
+          hypotA: A, hypotB: D,
+          t1TopA: D, t1TopB: cutTop, t1BotA: A, t1BotB: cutBot, t1High: h1.highP, t1Foot: h1.foot,
+          t2TopA: cutTop, t2TopB: C, t2BotA: cutBot, t2BotB: B, t2High: h2.highP, t2Foot: h2.foot,
+          baseCm: base, heightCm: height,
+          slantCm: Math.max(3, Math.round(Math.hypot(skew, height)))
+        };
+      }
+      let task2Bag = [];
+      function makeTaskTrap() {
+        const presets = [
+          { cut: "vert", top: 6, bot: 12, h: 8, slant: 10, wrong: 9, lx: 0, hx: 0, foot: [7.2, 6.4], end: [0, 1] },
+          { cut: "vert", top: 7, bot: 13, h: 8, slant: 10, wrong: 6, lx: 0, hx: 0, foot: [10.3, 3.6], end: [5.5, 0] },
+          { cut: "vert", top: 3, bot: 11, h: 6, slant: 10, wrong: 5, lx: 0, hx: 0, foot: [5.667, 4], end: [2.667, 0] },
+          { cut: "vert", top: 5, bot: 13, h: 6, slant: 10, wrong: 5, lx: 0, hx: 0, foot: [7.667, 4], end: [4.667, 0] },
+          { cut: "vert", top: 4, bot: 16, h: 9, slant: 15, wrong: 7, lx: 0, hx: 0, foot: [8.5333, 5.6], end: [4.3333, 0] },
+          { cut: "slant", top: 5, bot: 15, h: 6, slant: 10, wrong: 5, lx: 2, hx: 4, foot: [9.6667, 4], end: [6.6667, 0] },
+          { cut: "slant", top: 5, bot: 11, h: 4, slant: 5, wrong: 3, lx: 3, hx: 5, foot: [9.65, 1.8], end: [7.25, 0] },
+          { cut: "slant", top: 3, bot: 15, h: 12, slant: 15, wrong: 7, lx: 3, hx: 4, foot: [11.85, 4.2], end: [6.25, 0] }
+        ];
+        if (!task2Bag.length) task2Bag = shuffle(presets.map((_, i) => i));
+        const p = presets[task2Bag.pop()];
+        const mirror = Math.random() < 0.5;
+        const flip = (x) => mirror ? p.bot - x : x;
+        const topL = Math.min(flip(p.lx), flip(p.lx + p.top));
+        const topR = Math.max(flip(p.lx), flip(p.lx + p.top));
+        const A = { x: topL, y: p.h }, B = { x: topR, y: p.h };
+        const C = { x: p.bot, y: 0 }, D = { x: 0, y: 0 };
+        const hx = flip(p.cut === "vert" ? 0 : p.hx);
+        const foot = { x: hx, y: 0 }, highP = { x: hx, y: p.h };
+        const slantA = { x: flip(p.lx + p.top), y: p.h };
+        const slantB = { x: flip(p.bot), y: 0 };
+        const whFoot = { x: flip(p.foot[0]), y: p.foot[1] };
+        const whEnd = { x: flip(p.end[0]), y: p.end[1] };
+        return {
+          kind: p.cut, cut: p.cut,
+          A, B, C, D, foot, highP,
+          verts: [A, B, C, D],
+          trap1: [A, B, C, D], trap2: [A, B, C, D],
+          baseA: D, baseB: C, cutA: A, cutB: D,
+          hypotA: slantA, hypotB: slantB,
+          topA: A, topB: B, botA: D, botB: C,
+          slantA, slantB, whFoot, whEnd,
+          t1TopA: A, t1TopB: B, t1BotA: D, t1BotB: C, t1High: highP, t1Foot: foot,
+          t2TopA: A, t2TopB: B, t2BotA: D, t2BotB: C, t2High: highP, t2Foot: foot,
+          baseCm: p.bot, heightCm: p.h, slantCm: p.slant,
+          topCm: p.top, botCm: p.bot, wrongCm: p.wrong
+        };
+      }
+      function shiftShape(s, dx, dy) {
+        const mv = (p) => ({ x: p.x + dx, y: p.y + dy });
+        PT_KEYS.forEach((k) => { if (s[k]) s[k] = mv(s[k]); });
+        s.verts = s.verts.map(mv);
+        if (s.trap1) s.trap1 = s.trap1.map(mv);
+        if (s.trap2) s.trap2 = s.trap2.map(mv);
+        return s;
+      }
+      function cloneShape(s) {
+        return JSON.parse(JSON.stringify(s));
+      }
+      function genCutPair(mode) {
+        const unit = Math.random() < 0.3 ? "m" : "cm";
+        const specs = [
+          { base: 8, height: 4, skew: 2 },
+          { base: 10, height: 4, skew: 2 },
+          { base: 8, height: 6, skew: 2 },
+          { base: 6, height: 4, skew: 2 },
+          { base: 8, height: 4, skew: 4 },
+          { base: 10, height: 6, skew: 4 }
+        ];
+        shuffle(specs);
+        let src = null;
+        for (let i = 0; i < specs.length; i++) {
+          src = makeCutPara(specs[i].base, specs[i].height, specs[i].skew, mode);
+          if (src) break;
+        }
+        if (!src) src = makeCutPara(8, 4, 2, mode);
+        const left = cloneShape(src);
+        const right = cloneShape(src);
+        const gap = 2;
+        const leftMax = Math.max(...left.verts.map((p) => p.x));
+        const rightMin = Math.min(...right.verts.map((p) => p.x));
+        shiftShape(right, leftMax + gap - rightMin, 0);
+        return { pair: [left, right], unit, baseCm: src.baseCm, heightCm: src.heightCm, slantCm: src.slantCm, topCm: src.baseCm, botCm: src.baseCm, wrongCm: 0 };
+      }
+      function genTask2() {
+        const unit = Math.random() < 0.3 ? "m" : "cm";
+        const src = makeTaskTrap();
+        return {
+          pair: [src], unit,
+          baseCm: src.botCm, heightCm: src.heightCm, slantCm: src.slantCm,
+          topCm: src.topCm, botCm: src.botCm, wrongCm: src.wrongCm, cut: src.cut
+        };
+      }
+      const CONCEPTS = [
+        {
+          q: "梯形的上底＋下底＝平行四邊形的哪個部份？",
+          opts: [
+            { kind: "ok", label: "底" },
+            { kind: "drop", label: "高" },
+            { kind: "slant", label: "斜邊" }
+          ]
+        },
+        {
+          q: "梯形的高＝平行四邊形的哪個部份？",
+          opts: [
+            { kind: "ok", label: "高" },
+            { kind: "drop", label: "底" },
+            { kind: "slant", label: "斜邊" }
+          ]
+        },
+        {
+          q: "梯形和平行四邊形面積相等嗎？",
+          opts: [
+            { kind: "half", label: "相等", miss: "面積不相等。請再對比。" },
+            { kind: "slant", label: "梯形是兩倍", miss: "不是兩倍。請再對比。" },
+            { kind: "ok", label: "梯形是一半" }
+          ]
+        },
+        {
+          q: "平行四邊形面積＝底×高。梯形面積＝？",
+          opts: [
+            { kind: "ok", label: "(上底＋下底)×高÷2" },
+            { kind: "half", label: "(上底＋下底)×高", miss: "梯形面積是一半。請再對比。" },
+            { kind: "slant", label: "上底×斜邊÷2", miss: "要用對應的高。請再對比。" }
+          ]
+        }
+      ];
+      function fitQuestion(q, W, H) {
+        const local = q.local;
+        const solo = state.stage === "2";
+        const all = [];
+        local.pair.forEach((s) => {
+          s.verts.forEach((p) => all.push(p));
+          if (s.whEnd) all.push(s.whEnd);
+          if (s.whFoot) all.push(s.whFoot);
+          if (s.foot) all.push(s.foot);
+          if (s.highP) all.push(s.highP);
+        });
+        let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+        all.forEach((p) => {
+          minx = Math.min(minx, p.x); miny = Math.min(miny, p.y);
+          maxx = Math.max(maxx, p.x); maxy = Math.max(maxy, p.y);
+        });
+        const topBand = solo ? 72 : 56;
+        const side = solo ? 92 : 56;
+        const bot = solo ? 74 : 36;
+        const bw = Math.max(1, maxx - minx);
+        const bh = Math.max(1, maxy - miny);
+        const mL = solo ? 84 : 50, mR = W - (solo ? 84 : 50);
+        const mT = solo ? 68 : topBand, mB = H - (solo ? 68 : 18);
+        let cell = Math.max(10, Math.floor(Math.min((W - side * 2) / bw, (H - topBand - bot) / bh)));
+        function placeAt(cellSize) {
+          const sc = cellSize;
+          const figW = bw * sc, figH = bh * sc;
+          let x0 = (W - figW) / 2 - minx * sc;
+          let y0 = topBand + (H - topBand - figH) / 2 + maxy * sc;
+          x0 = Math.round(x0 / cellSize) * cellSize;
+          y0 = Math.round(y0 / cellSize) * cellSize;
+          let left = x0 + minx * sc, right = x0 + maxx * sc;
+          let top = y0 - maxy * sc, btm = y0 - miny * sc;
+          if (left < mL) { const d = Math.ceil((mL - left) / cellSize) * cellSize; x0 += d; left += d; right += d; }
+          if (right > mR) { const d = Math.ceil((right - mR) / cellSize) * cellSize; x0 -= d; left -= d; right -= d; }
+          if (top < mT) { const d = Math.ceil((mT - top) / cellSize) * cellSize; y0 += d; top += d; btm += d; }
+          if (btm > mB) { const d = Math.ceil((btm - mB) / cellSize) * cellSize; y0 -= d; top -= d; btm -= d; }
+          return { ox: x0, oy: y0, scale: sc, left, right, top, btm };
+        }
+        let fit = placeAt(cell);
+        while (cell > 10 && (fit.top < mT - 0.5 || fit.btm > mB + 0.5 || fit.left < mL - 0.5 || fit.right > mR + 0.5)) {
+          cell -= 1;
+          fit = placeAt(cell);
+        }
+        if (fit.top < mT) {
+          const d = mT - fit.top;
+          fit.oy += d; fit.top += d; fit.btm += d;
+        }
+        state.grid = cell;
+        const scale = fit.scale;
+        let ox = fit.ox, oy = fit.oy;
+        const xf = (p) => p ? ({ x: ox + p.x * scale, y: oy - p.y * scale }) : null;
+        q.pair = local.pair.map((s) => {
+          const o = {
+            kind: s.kind, baseCm: s.baseCm, heightCm: s.heightCm, slantCm: s.slantCm,
+            topCm: s.topCm, botCm: s.botCm, wrongCm: s.wrongCm
+          };
+          PT_KEYS.forEach((k) => { if (s[k]) o[k] = xf(s[k]); });
+          o.verts = [o.A, o.B, o.C, o.D];
+          o.trap1 = (s.trap1 || s.verts).map(xf);
+          o.trap2 = (s.trap2 || s.verts).map(xf);
+          return o;
+        });
+        const s0 = q.pair[0];
+        q.baseCm = s0.baseCm; q.heightCm = s0.heightCm; q.slantCm = s0.slantCm;
+        q.topCm = local.topCm; q.botCm = local.botCm; q.wrongCm = local.wrongCm;
+        q.unit = local.unit;
+        q.area = solo ? ((q.topCm + q.botCm) * q.heightCm) / 2 : (q.baseCm * q.heightCm) / 2;
+        q.A = s0.baseA; q.B = s0.baseB; q.C = s0.highP; q.D = s0.hypotB; q.foot = s0.foot;
+      }
+
+      function setToast(ok, text) {
+        const el = $("feedToast");
+        el.className = "toast show " + (ok ? "good" : "bad");
+        el.textContent = text;
+      }
+      function clearToast() { $("feedToast").className = "toast"; $("feedToast").textContent = ""; }
+      function miss(kind, msg) {
+        if (kind === "half") state.missHalf += 1;
+        else if (kind === "slant") state.missSlant += 1;
+        else if (kind === "unit") state.missUnit += 1;
+        else if (kind === "cut") state.missCut += 1;
+        else if (kind === "drop") state.missDrop += 1;
+        else if (kind === "wrong") state.missWrong += 1;
+        setToast(false, msg);
+        sfx("bad");
+        applyPenalty();
+      }
+      function cancelAnim() {
+        if (state.animId) cancelAnimationFrame(state.animId);
+        state.animId = 0;
+      }
+      function runAnim(ms, onTick, onEnd) {
+        cancelAnim();
+        const t0 = performance.now();
+        function step(now) {
+          if (state.ended) return;
+          const t = Math.min(1, (now - t0) / ms);
+          onTick(ease(t));
+          draw();
+          if (t < 1) state.animId = requestAnimationFrame(step);
+          else { state.animId = 0; if (onEnd) onEnd(); }
+        }
+        state.animId = requestAnimationFrame(step);
+      }
+      function showPhase(n) {
+        $("phase1Acts").style.display = n === 1 ? "flex" : "none";
+        $("phase2Acts").classList.toggle("show", n === 2);
+        if (n !== 2) $("phase2Acts").innerHTML = "";
+      }
+      function syncCutBtns() {}
+
+      function newQuestion() {
+        if (state.ended) return;
+        cancelAnim();
+        state.busy = false;
+        state.hoverTag = "";
+        startStage(state.stage || "1a");
+      }
+      function startStage(stage) {
+        if (state.ended) return;
+        cancelAnim();
+        state.busy = false;
+        state.hoverTag = "";
+        state.stage = stage;
+        let local;
+        if (stage === "2") local = genTask2();
+        else local = genCutPair(stage === "1a" ? "vert" : "slant");
+        state.q = {
+          local, phase: stage === "2" ? 2 : 1,
+          cutT: 0, slideT: 0, rotT: 0, cutDone: false, slideDone: false,
+          dropSlant: false, dropWrong: false, options: [], qi: 0, p2i: 1
+        };
+        $("playerPill").textContent = `${state.classId} ${normalizeId(state.studentId)}`;
+        $("qPill").textContent = `第 ${state.qIndex} 題`;
+        if (stage === "1a") {
+          $("taskTitle").textContent = "任務一：中線分割";
+          $("taskKind").textContent = "直角梯形";
+          $("hintBar").textContent = "1. 沿中線剪下　2. 旋轉成兩個相同的梯形";
+          $("btnCut").textContent = "✂️ 沿中線剪下";
+          if ($("btnSpin")) $("btnSpin").disabled = true;
+          showPhase(1);
+        } else if (stage === "1b") {
+          $("taskTitle").textContent = "任務一：中線分割";
+          $("taskKind").textContent = "梯形";
+          $("hintBar").textContent = "1. 沿中線剪下　2. 旋轉成兩個相同的梯形";
+          $("btnCut").textContent = "✂️ 沿中線剪下";
+          if ($("btnSpin")) $("btnSpin").disabled = true;
+          showPhase(1);
+        } else {
+          $("taskTitle").textContent = "任務二：梯形面積";
+          $("taskKind").textContent = local.cut === "slant" ? "梯形" : "直角梯形";
+          $("hintBar").textContent = "梯形面積＝「(上底＋下底)×高÷2」，點擊刪除多餘資料";
+          showPhase(0);
+        }
+        clearToast();
+        state.qStart = Date.now();
+        layoutCanvas();
+        draw();
+      }
+
+      function layoutCanvas() {
+        const c = scene;
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const w = Math.max(40, c.clientWidth);
+        const h = Math.max(40, c.clientHeight);
+        c.width = Math.round(w * dpr);
+        c.height = Math.round(h * dpr);
+        sceneCtx = c.getContext("2d");
+        sceneCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        state.cssW = w; state.cssH = h;
+        if (state.q && state.q.local) fitQuestion(state.q, w, h);
+      }
+
+      function pathPts(ctx, pts) {
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        pts.slice(1).forEach((p) => ctx.lineTo(p.x, p.y));
+        ctx.closePath();
+      }
+      function drawPoly(ctx, pts, fill, stroke, width) {
+        pathPts(ctx, pts);
+        if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+        if (stroke) {
+          ctx.strokeStyle = stroke; ctx.lineWidth = width || 4;
+          ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.stroke();
+        }
+      }
+      function drawGrid(ctx, w, h) {
+        const g = ctx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#eefaf5");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = "rgba(60, 188, 154, 0.14)";
+        ctx.lineWidth = 1;
+        const step = state.grid || GRID;
+        for (let x = 0.5; x < w; x += step) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+        for (let y = 0.5; y < h; y += step) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+      }
+      function drawRightMark(ctx, H, A, B, T) {
+        const leg = sub(T, H);
+        if (len(leg) < 0.5) return;
+        const up = norm(leg);
+        let side = { x: -up.y, y: up.x };
+        if (A && B) {
+          const mid = lerp(A, B, 0.5);
+          if (dot(side, sub(mid, H)) < 0) side = { x: -side.x, y: -side.y };
+        }
+        const m = 16;
+        const p1 = add(H, mul(side, m));
+        const p2 = add(p1, mul(up, m));
+        const p3 = add(H, mul(up, m));
+        ctx.save();
+        ctx.strokeStyle = "#111";
+        ctx.lineWidth = 3.5;
+        ctx.lineCap = "butt";
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.stroke();
+        ctx.restore();
+      }
+      function tagBox(text, x, y, fs) {
+        const size = fs || 16;
+        const tw = sceneCtx.measureText(text).width;
+        const pw = tw + Math.max(14, size * 1.35), ph = size + 12;
+        const maxW = state.cssW || 400, maxH = state.cssH || 400;
+        x = Math.max(pw / 2 + 2, Math.min(maxW - pw / 2 - 2, x));
+        y = Math.max(ph / 2 + 2, Math.min(maxH - ph / 2 - 2, y));
+        return { x, y, pw, ph, size };
+      }
+      function drawTag(ctx, text, x, y, color, fs, faded, noClamp) {
+        ctx.font = "900 " + (fs || 16) + "px 'Noto Sans TC', sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        const b = noClamp
+          ? (() => { const size = fs || 16; const tw = ctx.measureText(text).width; return { x, y, pw: tw + Math.max(14, size * 1.35), ph: size + 12, size }; })()
+          : tagBox(text, x, y, fs || 16);
+        const r = Math.min(10, b.ph / 2);
+        const x0 = b.x - b.pw / 2, y0 = b.y - b.ph / 2;
+        ctx.beginPath();
+        ctx.moveTo(x0 + r, y0);
+        ctx.arcTo(x0 + b.pw, y0, x0 + b.pw, y0 + b.ph, r);
+        ctx.arcTo(x0 + b.pw, y0 + b.ph, x0, y0 + b.ph, r);
+        ctx.arcTo(x0, y0 + b.ph, x0, y0, r);
+        ctx.arcTo(x0, y0, x0 + b.pw, y0, r);
+        ctx.closePath();
+        ctx.globalAlpha = faded ? 0.38 : 1;
+        ctx.fillStyle = "rgba(255,255,255,0.94)";
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.fillText(text, b.x, b.y);
+        if (faded) {
+          ctx.beginPath();
+          ctx.moveTo(x0 + 6, y0 + 6); ctx.lineTo(x0 + b.pw - 6, y0 + b.ph - 6);
+          ctx.strokeStyle = "#b42318"; ctx.lineWidth = 2; ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        return { x: b.x, y: b.y, w: b.pw, h: b.ph };
+      }
+      function outsideMid(a, b, c, gap) {
+        const mid = lerp(a, b, 0.5);
+        let n = norm({ x: a.y - b.y, y: b.x - a.x });
+        if (dot(n, sub(c, mid)) > 0) n = mul(n, -1);
+        return add(mid, mul(n, gap));
+      }
+      function distToSeg(p, a, b) {
+        const ab = sub(b, a);
+        const t = Math.max(0, Math.min(1, dot(sub(p, a), ab) / (dot(ab, ab) || 1)));
+        return dist(p, add(a, mul(ab, t)));
+      }
+      function placeHeightTag(foot, highP, cen, hypotA, hypotB, gap) {
+        const hm = lerp(foot, highP, 0.55);
+        let n = norm({ x: highP.y - foot.y, y: foot.x - highP.x });
+        if (dot(n, sub(cen, hm)) < 0) n = mul(n, -1);
+        const g = gap || 22;
+        let hp = add(hm, mul(n, g));
+        const dH = distToSeg(hp, foot, highP);
+        const dS = distToSeg(hp, hypotA, hypotB);
+        if (dS < dH + 14) {
+          hp = add(hm, mul(n, -g));
+          if (distToSeg(hp, hypotA, hypotB) < distToSeg(hp, foot, highP) + 14) {
+            hp = add(hm, mul(n, Math.min(g, 18)));
+          }
+        }
+        return hp;
+      }
+      function resolveTagPos(items, midX, W, H) {
+        const maxW = W || state.cssW || 400, maxH = H || state.cssH || 400;
+        function measure(it) {
+          sceneCtx.font = "900 " + (it.fs || 16) + "px 'Noto Sans TC', sans-serif";
+          const tw = sceneCtx.measureText(it.text).width;
+          const size = it.fs || 16;
+          it.w = tw + Math.max(14, size * 1.35);
+          it.h = size + 12;
+        }
+        function clampItem(it) {
+          const halfW = it.w / 2 + 2, halfH = it.h / 2 + 2;
+          let x0 = halfW, x1 = maxW - halfW;
+          if (it.side === 0 && midX) x1 = Math.min(x1, midX - halfW - 6);
+          if (it.side === 1 && midX) x0 = Math.max(x0, midX + halfW + 6);
+          const hasTitle = items.some((t) => t.kind === "title");
+          const y0 = it.kind === "title" ? halfH + 2 : (hasTitle ? 36 + halfH : halfH + 4);
+          it.x = Math.max(x0, Math.min(x1, it.x));
+          it.y = Math.max(y0, Math.min(maxH - halfH, it.y));
+        }
+        items.forEach(measure);
+        items.forEach(clampItem);
+        for (let n = 0; n < 24; n++) {
+          for (let i = 0; i < items.length; i++) {
+            for (let j = i + 1; j < items.length; j++) {
+              const a = items[i], b = items[j];
+              const dx = b.x - a.x, dy = b.y - a.y;
+              const ox = (a.w + b.w) / 2 + 10 - Math.abs(dx);
+              const oy = (a.h + b.h) / 2 + 8 - Math.abs(dy);
+              if (ox > 0 && oy > 0) {
+                const aFix = a.kind === "title", bFix = b.kind === "title";
+                if (ox < oy) {
+                  const s = (dx === 0 ? 1 : Math.sign(dx)) * ox / 2;
+                  if (!aFix) a.x -= s * (bFix ? 2 : 1);
+                  if (!bFix) b.x += s * (aFix ? 2 : 1);
+                } else {
+                  const s = (dy === 0 ? 1 : Math.sign(dy)) * oy / 2;
+                  if (!aFix) a.y -= s * (bFix ? 2 : 1);
+                  if (!bFix) b.y += s * (aFix ? 2 : 1);
+                }
+              }
+            }
+          }
+          items.forEach(clampItem);
+        }
+        items.forEach((it) => {
+          if (it.kind !== "height" || !it.foot || !it.highP) return;
+          const dH = distToSeg({ x: it.x, y: it.y }, it.foot, it.highP);
+          const dS = (it.hA && it.hB) ? distToSeg({ x: it.x, y: it.y }, it.hA, it.hB) : 1e9;
+          if (dS < dH + 12) {
+            const hp = placeHeightTag(it.foot, it.highP, { x: it.x, y: it.y }, it.hA, it.hB, 22);
+            it.x = hp.x; it.y = hp.y;
+            clampItem(it);
+          }
+        });
+        return items;
+      }
+      function drawPlacedTag(ctx, it) {
+        return drawTag(ctx, it.text, it.x, it.y, it.color, it.fs, it.faded, true);
+      }
+      function drawHeightLine(ctx, s, cutT) {
+        const from = s.highP, foot = s.foot;
+        ctx.save();
+        ctx.setLineDash([10, 7]);
+        ctx.strokeStyle = "#3cbc9a";
+        ctx.lineWidth = 4;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(foot.x, foot.y);
+        ctx.stroke();
+        ctx.restore();
+        drawRightMark(ctx, foot, s.baseA, s.baseB, from);
+      }
+      function splitAxis(s) {
+        const mid = lerp(s.cutA, s.cutB, 0.5);
+        const body = s.trap1 || s.verts;
+        return centroid(body).x <= mid.x ? { x: -1, y: 0 } : { x: 1, y: 0 };
+      }
+      function splitParts(s, slideT, rotT) {
+        const n = splitAxis(s);
+        const gap = (slideT || 0) * (s.kind === "slant" ? 16 : 34);
+        const off1 = mul(n, gap);
+        const off2 = mul(n, -gap);
+        const rt = rotT || 0;
+        const M = lerp(s.cutA, s.cutB, 0.5);
+        const off = {
+          x: off2.x + (off1.x - off2.x) * rt,
+          y: off2.y + (off1.y - off2.y) * rt
+        };
+        const ang = rt * Math.PI;
+        const spin = (p) => add(add(M, rot(sub(p, M), ang)), off);
+        const move1 = (p) => add(p, off1);
+        return {
+          t1: s.trap1.map(move1),
+          t2: s.trap2.map(spin),
+          h1: { foot: move1(s.t1Foot), highP: move1(s.t1High) },
+          h2: { foot: spin(s.t2Foot), highP: spin(s.t2High) },
+          top1: [move1(s.t1TopA), move1(s.t1TopB)],
+          bot1: [move1(s.t1BotA), move1(s.t1BotB)],
+          top2: [spin(s.t2TopA), spin(s.t2TopB)],
+          bot2: [spin(s.t2BotA), spin(s.t2BotB)],
+          slant1: [move1(s.hypotA), move1(s.hypotB)],
+          slant2: [spin(s.B), spin(s.C)]
+        };
+      }
+
+      function draw() {
+        if (!sceneCtx) return;
+        const ctx = sceneCtx, w = state.cssW, h = state.cssH;
+        drawGrid(ctx, w, h);
+        const q = state.q;
+        state.tags = [];
+        if (!q || !q.pair) return;
+        const cutT = q.cutT || 0;
+        const slideT = q.slideT || 0;
+        const rotT = q.rotT || 0;
+        const areaQuiz = q.phase === "quiz" && (q.qi || 0) >= 2;
+        const beat = 0.5 + 0.5 * Math.sin(performance.now() / 200);
+        const flash = 0.5 + 0.5 * Math.sin(performance.now() / 160);
+        const fillStill = "rgba(126,236,200,0.5)";
+        const fillBlink = `rgba(${Math.round(48 + 70 * beat)},${Math.round(158 + 70 * beat)},${Math.round(118 + 70 * beat)},${0.72 + 0.26 * beat})`;
+
+        if (state.stage !== "2" && q.pair.length > 1) {
+          const L = q.pair[0], R = q.pair[1];
+          const lx = Math.max(...L.verts.map((p) => p.x));
+          const rx = Math.min(...R.verts.map((p) => p.x));
+          const mid = (lx + rx) / 2;
+          ctx.save();
+          ctx.setLineDash([8, 7]);
+          ctx.strokeStyle = "rgba(59,42,85,0.35)";
+          ctx.lineWidth = 2;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(mid, 10);
+          ctx.lineTo(mid, h - 10);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        if (state.stage === "2") {
+          const s = q.pair[0];
+          const u = q.unit;
+          const cen = centroid(s.verts);
+          drawPoly(ctx, s.verts, fillStill, "#1a3d68", 5);
+          ctx.save();
+          ctx.lineCap = "round";
+          ctx.strokeStyle = "#ee4d93";
+          ctx.lineWidth = 7;
+          ctx.beginPath(); ctx.moveTo(s.topA.x, s.topA.y); ctx.lineTo(s.topB.x, s.topB.y); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(s.botA.x, s.botA.y); ctx.lineTo(s.botB.x, s.botB.y); ctx.stroke();
+          ctx.restore();
+          drawHeightLine(ctx, s, 0);
+          ctx.save();
+          ctx.setLineDash([8, 6]);
+          ctx.strokeStyle = "#d35400";
+          ctx.globalAlpha = q.dropWrong ? 0.35 : 1;
+          ctx.lineWidth = 4;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(s.whFoot.x, s.whFoot.y);
+          ctx.lineTo(s.whEnd.x, s.whEnd.y);
+          ctx.stroke();
+          ctx.restore();
+          if (!q.dropWrong) drawRightMark(ctx, s.whFoot, s.slantA, s.slantB, s.whEnd);
+          const topPos = outsideMid(s.topA, s.topB, cen, 40);
+          const botPos = outsideMid(s.botA, s.botB, cen, 42);
+          const hp = outsideMid(s.foot, s.highP, cen, 28);
+          const sl = outsideMid(s.slantA, s.slantB, cen, 32);
+          const wm = lerp(s.whFoot, s.whEnd, 0.62);
+          let wn = norm({ x: s.whEnd.y - s.whFoot.y, y: s.whFoot.x - s.whEnd.x });
+          if (dot(wn, sub(cen, wm)) > 0) wn = mul(wn, -1);
+          const wrongPos = add(wm, mul(wn, 26));
+          const placed = resolveTagPos([
+            { kind: "top", text: `上底 ${q.topCm}${u}`, x: topPos.x, y: topPos.y, color: "#c0392b", fs: 20, side: 0 },
+            { kind: "base", text: `下底 ${q.botCm}${u}`, x: botPos.x, y: botPos.y, color: "#c0392b", fs: 20, side: 0 },
+            { kind: "height", text: `高 ${q.heightCm}${u}`, x: hp.x, y: hp.y, color: "#1a8f7c", fs: 20, side: 0, foot: s.foot, highP: s.highP, hA: s.slantA, hB: s.slantB },
+            { kind: "slant", text: `斜邊 ${q.slantCm}${u}`, x: sl.x, y: sl.y, color: "#d35400", fs: 20, faded: q.dropSlant, side: 0 },
+            { kind: "wrong", text: `高 ${q.wrongCm}${u}`, x: wrongPos.x, y: wrongPos.y, color: "#d35400", fs: 20, faded: q.dropWrong, side: 0 }
+          ], null, w, h);
+          state.tags = placed.map((it) => {
+            const box = drawPlacedTag(ctx, it);
+            return { kind: it.kind, ...box };
+          });
+          return;
+        }
+
+        const quizTags = [];
+        function strokeSeg(a, b, color, width, alpha) {
+          ctx.save();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = width;
+          ctx.lineCap = "round";
+          ctx.globalAlpha = alpha == null ? 1 : alpha;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+          ctx.restore();
+        }
+        q.pair.forEach((s, i) => {
+          const cen = centroid(s.verts);
+          const splitThis = i === 1 && slideT > 0;
+          if (splitThis) {
+            const sp = splitParts(s, slideT, rotT);
+            const fillA = areaQuiz ? fillBlink : fillStill;
+            const fillB = rotT > 0 ? "rgba(255,126,182,0.55)" : fillStill;
+            drawPoly(ctx, sp.t1, fillA, "#1a3d68", 5);
+            drawPoly(ctx, sp.t2, fillB, "#1a3d68", 5);
+            [sp.top1, sp.bot1, sp.top2, sp.bot2].forEach((edge) => {
+              strokeSeg(edge[0], edge[1], "#ee4d93", 7, 1);
+            });
+            const elen = (e) => Math.hypot(e[1].x - e[0].x, e[1].y - e[0].y);
+            const topIsShang = Math.abs(elen(sp.top2) - elen(sp.top1)) <= Math.abs(elen(sp.bot2) - elen(sp.top1));
+            const shang2 = topIsShang ? sp.top2 : sp.bot2;
+            const xia2 = topIsShang ? sp.bot2 : sp.top2;
+            if (i === 1 && q.phase === "quiz" && q.qi === 0) {
+              strokeSeg(sp.bot1[0], sp.bot1[1], "#ee4d93", 16, 0.45 + 0.55 * flash);
+              strokeSeg(shang2[0], shang2[1], "#ee4d93", 16, 0.45 + 0.55 * flash);
+            }
+            drawHeightLine(ctx, { highP: sp.h1.highP, foot: sp.h1.foot, baseA: sp.bot1[0], baseB: sp.bot1[1] }, 0);
+            if (i === 1 && q.phase === "quiz" && q.qi === 1) {
+              strokeSeg(sp.h1.highP, sp.h1.foot, "#1a8f7c", 16, 0.45 + 0.55 * flash);
+            }
+            if (q.phase === "quiz" && i === 1) {
+              const c1 = centroid(sp.t1);
+              const c2 = centroid(sp.t2);
+              const bTop = outsideMid(sp.top1[0], sp.top1[1], c1, 30);
+              const bBot = outsideMid(sp.bot1[0], sp.bot1[1], c1, 34);
+              const bShang = outsideMid(shang2[0], shang2[1], c2, 30);
+              const bXia = outsideMid(xia2[0], xia2[1], c2, 34);
+              const sl1 = outsideMid(sp.slant1[0], sp.slant1[1], c1, 32);
+              const sl2 = outsideMid(sp.slant2[0], sp.slant2[1], c2, 32);
+              const hp = placeHeightTag(sp.h1.foot, sp.h1.highP, c1, sp.slant1[0], sp.slant1[1], 22);
+              quizTags.push(
+                { kind: "top", text: "上底", x: bTop.x, y: bTop.y, color: "#c0392b", fs: 20, side: 1 },
+                { kind: "base", text: "下底", x: bBot.x, y: bBot.y, color: "#c0392b", fs: 20, side: 1 },
+                { kind: "height", text: "高", x: hp.x, y: hp.y, color: "#1a8f7c", fs: 20, side: 1, foot: sp.h1.foot, highP: sp.h1.highP, hA: sp.slant1[0], hB: sp.slant1[1] },
+                { kind: "slant", text: "斜邊", x: sl1.x, y: sl1.y, color: "#d35400", fs: 20, side: 1 },
+                { kind: "top", text: "上底", x: bShang.x, y: bShang.y, color: "#c0392b", fs: 20, side: 1 },
+                { kind: "base", text: "下底", x: bXia.x, y: bXia.y, color: "#c0392b", fs: 20, side: 1 },
+                { kind: "slant", text: "斜邊", x: sl2.x, y: sl2.y, color: "#d35400", fs: 20, side: 1 }
+              );
+            }
+          } else {
+            drawPoly(ctx, s.verts, areaQuiz && i === 0 ? fillBlink : fillStill, "#1a3d68", 5);
+            strokeSeg(s.baseA, s.baseB, "#ee4d93", 7, 1);
+            drawHeightLine(ctx, s, 0);
+            if (i === 1 && q.phase === 1 && cutT > 0) {
+              const end = lerp(s.cutA, s.cutB, q.cutDone ? 1 : cutT);
+              strokeSeg(s.cutA, end, "#ee4d93", 6, 1);
+            }
+            if (q.phase === "quiz" && i === 0) {
+              const b = outsideMid(s.baseA, s.baseB, cen, 34);
+              const hp = placeHeightTag(s.foot, s.highP, cen, s.hypotA, s.hypotB, 24);
+              const sl = outsideMid(s.hypotA, s.hypotB, cen, 36);
+              quizTags.push(
+                { kind: "base", text: "底", x: b.x, y: b.y, color: "#c0392b", fs: 20, side: 0, foot: s.foot, highP: s.highP },
+                { kind: "height", text: "高", x: hp.x, y: hp.y, color: "#1a8f7c", fs: 20, side: 0, foot: s.foot, highP: s.highP, hA: s.hypotA, hB: s.hypotB },
+                { kind: "slant", text: "斜邊", x: sl.x, y: sl.y, color: "#d35400", fs: 20, side: 0 }
+              );
+            }
+          }
+        });
+        let midX = w / 2;
+        if (q.pair.length > 1) {
+          const L = q.pair[0], R = q.pair[1];
+          midX = (Math.max(...L.verts.map((p) => p.x)) + Math.min(...R.verts.map((p) => p.x))) / 2;
+          quizTags.push(
+            { kind: "title", text: "分割前", x: (10 + midX) / 2, y: 22, color: "#7a6588", fs: 20, side: -1 },
+            { kind: "title", text: "分割後", x: (midX + w - 10) / 2, y: 22, color: "#7a6588", fs: 20, side: -1 }
+          );
+        }
+        if (quizTags.length) {
+          const placed = resolveTagPos(quizTags, midX, w, h);
+          const hits = [];
+          placed.forEach((it) => {
+            if (it.kind === "title") {
+              ctx.save();
+              ctx.font = "900 " + (it.fs || 20) + "px 'Noto Sans TC', sans-serif";
+              ctx.fillStyle = it.color;
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText(it.text, it.x, it.y);
+              ctx.restore();
+              return;
+            }
+            const box = drawPlacedTag(ctx, it);
+            if (it.side === 0 && (q.qi || 0) < 2) hits.push({ kind: it.kind, ...box });
+          });
+          if (hits.length) state.tags = hits;
+        }
+      }
+
+      function doCut() {
+        const q = state.q;
+        if (!q || q.phase !== 1 || state.busy || state.ended) return;
+        bounce($("btnCut"));
+        if (q.cutDone && q.slideDone) return;
+        clearToast();
+        state.busy = true;
+        q.cutT = 0; q.slideT = 0; q.rotT = 0;
+        sfx("snap");
+        runAnim(900, (t) => { q.cutT = t; }, () => {
+          q.cutT = 1; q.cutDone = true;
+          sfx("ok");
+          runAnim(1100, (t) => { q.slideT = t; }, () => {
+            q.slideT = 1; q.slideDone = true; state.busy = false;
+            $("btnSpin").disabled = false;
+            draw();
+          });
+        });
+      }
+      function doSpin() {
+        const q = state.q;
+        if (!q || q.phase !== 1 || state.busy || state.ended) return;
+        bounce($("btnSpin"));
+        if (!q.slideDone) {
+          miss("cut", "請先沿中線剪下。");
+          return;
+        }
+        state.busy = true;
+        $("btnSpin").disabled = true;
+        q.rotT = 0;
+        sfx("ok");
+        runAnim(1800, (t) => { q.rotT = t; }, () => {
+          q.rotT = 1;
+          draw();
+          setTimeout(() => {
+            if (state.ended || state.q !== q) return;
+            runAnim(1800, (t) => { q.rotT = 1 - t; }, () => {
+              q.rotT = 0; state.busy = false;
+              showConcept();
+            });
+          }, 1100);
+        });
+      }
+      function showConcept() {
+        const q = state.q;
+        if (!q || state.ended) return;
+        q.phase = "quiz";
+        const c = CONCEPTS[q.qi || 0];
+        $("hintBar").textContent = c.q;
+        clearToast();
+        if ((q.qi || 0) < 2) {
+          showPhase(0);
+        } else {
+          showPhase(2);
+          const opts = shuffle(c.opts);
+          $("phase2Acts").innerHTML = opts.map((o, i) =>
+            `<button class="candy ${i === 0 ? "lilac" : i === 1 ? "lemon" : "mint"}" data-kind="${o.kind}">${o.label}</button>`
+          ).join("");
+        }
+        draw();
+        ensureQuizTick();
+      }
+      function ensureQuizTick() {
+        if (state.quizTick) return;
+        state.quizTick = true;
+        function tick() {
+          if (state.ended || !state.q || state.q.phase !== "quiz") {
+            state.quizTick = false;
+            return;
+          }
+          draw();
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+      function pickConcept(kind) {
+        const q = state.q;
+        if (!q || q.phase !== "quiz" || state.busy || state.ended) return;
+        if (kind === "ok") {
+          sfx("ok");
+          clearToast();
+          q.qi += 1;
+          if (q.qi >= CONCEPTS.length) completeStage();
+          else showConcept();
+          return;
+        }
+        const c = CONCEPTS[q.qi];
+        const opt = (c.opts || []).find((o) => o.kind === kind);
+        miss(kind === "half" ? "half" : kind === "slant" ? "slant" : "drop", (opt && opt.miss) || "這不是。請再對比。");
+      }
+      function completeStage() {
+        if (state.ended) return;
+        clearToast();
+        state.busy = true;
+        state.done += 1;
+        state.qTimes.push(Math.max(1, Math.round((Date.now() - state.qStart) / 1000)));
+        burstConfetti(18);
+        sfx("ok");
+        const next = state.stage === "1a" ? "1b" : "2";
+        setTimeout(() => {
+          if (state.ended) return;
+          state.qIndex += 1;
+          startStage(next);
+        }, 700);
+      }
+      function buildOptions(q) {
+        const u = q.unit;
+        const area = q.area;
+        const sum = q.topCm + q.botCm;
+        const para = sum * q.heightCm;
+        const whArea = sum * q.wrongCm / 2;
+        const slArea = sum * q.slantCm / 2;
+        const n = state.qIndex % 3;
+        const third = n === 0
+          ? { kind: "wrong", label: `(${q.topCm}＋${q.botCm})×${q.wrongCm}÷2＝${whArea} ${u}²` }
+          : n === 1
+            ? { kind: "slant", label: `(${q.topCm}＋${q.botCm})×${q.slantCm}÷2＝${slArea} ${u}²` }
+            : { kind: "unit", label: `(${q.topCm}＋${q.botCm})×${q.heightCm}÷2＝${area} ${u}` };
+        return shuffle([
+          { kind: "ok", label: `(${q.topCm}＋${q.botCm})×${q.heightCm}÷2＝${area} ${u}²` },
+          { kind: "half", label: `(${q.topCm}＋${q.botCm})×${q.heightCm}＝${para} ${u}²` },
+          third
+        ]);
+      }
+      function showAreaChoices() {
+        const q = state.q;
+        q.options = buildOptions(q);
+        $("hintBar").textContent = "用「(上底＋下底)×高÷2」求面積";
+        showPhase(2);
+        $("phase2Acts").innerHTML = q.options.map((o, i) =>
+          `<button class="candy ${i === 0 ? "lilac" : i === 1 ? "lemon" : "mint"}" data-kind="${o.kind}">${o.label}</button>`
+        ).join("");
+      }
+      function onTagClick(kind) {
+        const q = state.q;
+        if (!q || state.busy || state.ended) return;
+        if (q.phase === "quiz" && (q.qi || 0) < 2) {
+          const need = q.qi === 0 ? "base" : "height";
+          if (kind === need) {
+            sfx("ok");
+            clearToast();
+            q.qi += 1;
+            showConcept();
+          } else {
+            const want = need === "height" ? "高" : "底";
+            miss(kind === "slant" ? "slant" : "drop", `這不是${want}。請再對比。`);
+          }
+          return;
+        }
+        if (state.stage !== "2" || q.phase !== 2) return;
+        if (q.dropSlant && q.dropWrong) return;
+        if (kind === "slant" && !q.dropSlant) {
+          q.dropSlant = true;
+          sfx("ok");
+          clearToast();
+          if (q.dropWrong) showAreaChoices();
+          else {
+            $("hintBar").textContent = "已刪除斜邊。請再刪除多餘資料。";
+            draw();
+          }
+          return;
+        }
+        if (kind === "wrong" && !q.dropWrong) {
+          q.dropWrong = true;
+          sfx("ok");
+          clearToast();
+          if (q.dropSlant) showAreaChoices();
+          else {
+            $("hintBar").textContent = "已刪除多餘的高。請再刪除多餘資料。";
+            draw();
+          }
+          return;
+        }
+        if (kind === "top") miss("drop", "這是上底。請先刪除多餘資料。");
+        else if (kind === "base") miss("drop", "這是下底。請先刪除多餘資料。");
+        else if (kind === "height") miss("drop", "這是高。請先刪除多餘資料。");
+      }
+      function pickArea(kind) {
+        const q = state.q;
+        if (!q || q.phase !== 2 || !q.dropSlant || !q.dropWrong || state.busy || state.ended) return;
+        if (kind === "ok") {
+          $("hintBar").textContent = "面積＝「(上底＋下底)×高÷2」";
+          clearToast();
+          completeStage();
+          return;
+        }
+        if (kind === "unit") miss("unit", "單位漏了平方。請再計算。");
+        else if (kind === "half") miss("half", "梯形面積是一半。請再計算。");
+        else if (kind === "wrong") miss("wrong", "請用對應的高。請再計算。");
+        else miss("slant", "要用對應的高。請再計算。");
+      }
+
+      function hitTag(p) {
+        return state.tags.find((t) =>
+          Math.abs(p.x - t.x) <= t.w / 2 && Math.abs(p.y - t.y) <= t.h / 2
+        );
+      }
+      function canvasPt(e) {
+        const r = scene.getBoundingClientRect();
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+      }
+
+      function startGame() {
+        const classId = $("classId").value.trim().toUpperCase();
+        const studentId = $("studentId").value.trim();
+        if (!classId || !studentId) { bounce($("startBtn")); return; }
+        unlockAudio();
+        state.classId = classId; state.studentId = studentId;
+        state.qIndex = 1; state.done = 0; state.qTimes = [];
+        state.missHalf = 0; state.missSlant = 0; state.missUnit = 0; state.missCut = 0; state.missDrop = 0; state.missWrong = 0;
+        state.ended = false; state.busy = false; state.sheetSent = false;
+        state.stage = "1a";
+        task2Bag = [];
+        $("reportModal").classList.remove("show");
+        ensureStudent();
+        showScreen("game");
+        startCountdown();
+        requestAnimationFrame(() => newQuestion());
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"'`]/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;"
+        }[c]));
+      }
+      function cmpStudent(a, b) {
+        if (a.classId !== b.classId) return String(a.classId).localeCompare(String(b.classId), "zh-Hant");
+        const na = parseInt(a.studentId, 10), nb = parseInt(b.studentId, 10);
+        if (!Number.isNaN(na) && !Number.isNaN(nb) && na !== nb) return na - nb;
+        return String(a.studentId).localeCompare(String(b.studentId), "zh-Hant", { numeric: true });
+      }
+      function timeDay(t) {
+        const s = String(t || "");
+        const m = s.match(/^\d{4}\/\d{2}\/\d{2}/);
+        return m ? m[0] : (s || "（空白）");
+      }
+      function colValue(key, e) {
+        if (key === "student") return `${e.classId} ${e.studentId}`.trim() || "（空白）";
+        if (key === "score") return String(e.done);
+        if (key === "avg") return e.avgSec ? String(e.avgSec) : "—";
+        if (key === "diagnosis") return e.diagnosis || "（空白）";
+        return timeDay(e.time);
+      }
+      function classLogs() {
+        if (!dashClass || dashClass === "ALL") return dashAllLogs;
+        return dashAllLogs.filter((e) => e.classId === dashClass);
+      }
+      function uniqueValues(key) {
+        const set = new Set();
+        classLogs().forEach((e) => set.add(colValue(key, e)));
+        const arr = [...set];
+        const spec = DASH_COLS.find((c) => c.key === key);
+        arr.sort((a, b) => {
+          if (spec && spec.numeric) {
+            const na = Number(a), nb = Number(b);
+            const fa = Number.isFinite(na), fb = Number.isFinite(nb);
+            if (fa && fb) return na - nb;
+            if (fa) return -1;
+            if (fb) return 1;
+          }
+          return String(a).localeCompare(String(b), "zh-Hant", { numeric: true });
+        });
+        return arr;
+      }
+      function filterActive(key) {
+        const sel = dashFilters[key];
+        return !!(sel && sel.size < uniqueValues(key).length);
+      }
+      function anyFilterOn() { return DASH_COLS.some((c) => filterActive(c.key)); }
+      function passesFilters(e) {
+        return DASH_COLS.every((col) => {
+          const sel = dashFilters[col.key];
+          if (!sel) return true;
+          return sel.has(colValue(col.key, e));
+        });
+      }
+      function sortLogs(logs) {
+        const col = dashSort.col;
+        const m = dashSort.dir === "asc" ? 1 : -1;
+        return logs.slice().sort((a, b) => {
+          let c = 0;
+          if (col === "score") c = a.done - b.done;
+          else if (col === "avg") c = (a.avgSec || 0) - (b.avgSec || 0);
+          else if (col === "student") c = cmpStudent(a, b);
+          else if (col === "time") c = String(a.time || "").localeCompare(String(b.time || ""));
+          else if (col === "diagnosis") c = String(a.diagnosis || "").localeCompare(String(b.diagnosis || ""), "zh-Hant");
+          return (c * m) || cmpStudent(a, b);
+        });
+      }
+      function sortMark(key) {
+        if (dashSort.col !== key) return "";
+        return dashSort.dir === "asc" ? " ▲" : " ▼";
+      }
+      function closeFilterMenu() {
+        dashMenuCol = "";
+        const menu = $("dashFilterMenu");
+        if (menu) menu.classList.remove("show");
+      }
+      function resetDashFilters() {
+        dashFilters = {};
+        dashSort = { col: "student", dir: "asc" };
+        dashClass = "ALL";
+        closeFilterMenu();
+      }
+      function placeFilterMenu(anchor) {
+        const menu = $("dashFilterMenu");
+        const r = anchor.getBoundingClientRect();
+        menu.classList.add("show");
+        const w = menu.offsetWidth || 260;
+        const h = menu.offsetHeight || 280;
+        let left = Math.min(r.left, window.innerWidth - w - 8);
+        let top = r.bottom + 4;
+        if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 4);
+        if (left < 8) left = 8;
+        menu.style.left = left + "px";
+        menu.style.top = top + "px";
+      }
+      function renderFilterMenu(key, q) {
+        const spec = DASH_COLS.find((c) => c.key === key);
+        if (!spec) return;
+        const values = uniqueValues(key);
+        const sel = dashFilters[key];
+        const query = String(q || "").trim();
+        const shown = query ? values.filter((v) => String(v).indexOf(query) !== -1) : values;
+        const allOn = !sel;
+        const sortDesc = key === "time" ? "新 → 舊" : (spec.numeric ? "由高到低" : "由 Z 到 A");
+        const sortAsc = key === "time" ? "舊 → 新" : (spec.numeric ? "由低到高" : "由 A 到 Z");
+        $("dashFilterMenu").innerHTML = `
+          <div class="fm-title">篩選：${escapeHtml(spec.label)}</div>
+          <div class="fm-acts">
+            <button type="button" data-fm="sort-desc">${sortDesc}</button>
+            <button type="button" data-fm="sort-asc">${sortAsc}</button>
+          </div>
+          <input type="search" id="fmSearch" placeholder="搜尋" value="${escapeHtml(query)}" />
+          <div class="fm-acts">
+            <button type="button" data-fm="all">全選</button>
+            <button type="button" data-fm="none">全不選</button>
+            <button type="button" data-fm="clear">清除此欄</button>
+          </div>
+          <div class="opts">
+            ${shown.map((v) => {
+              const on = allOn || sel.has(v);
+              const idx = values.indexOf(v);
+              return `<label><input type="checkbox" data-idx="${idx}" ${on ? "checked" : ""} />${escapeHtml(v)}</label>`;
+            }).join("") || `<div class="empty">沒有項目</div>`}
+          </div>
+        `;
+        const search = $("fmSearch");
+        if (search) {
+          search.focus();
+          const n = search.value.length;
+          try { search.setSelectionRange(n, n); } catch (err) {}
+        }
+      }
+      function openFilterMenu(key, anchor) {
+        dashMenuCol = key;
+        renderFilterMenu(key, "");
+        placeFilterMenu(anchor);
+      }
+      function setColFilter(key, nextSet) {
+        const all = uniqueValues(key);
+        if (!nextSet || nextSet.size === all.length) dashFilters[key] = null;
+        else dashFilters[key] = nextSet;
+        paintDash();
+        if (dashMenuCol === key) {
+          const q = ($("fmSearch") && $("fmSearch").value) || "";
+          renderFilterMenu(key, q);
+          const btn = document.querySelector(`.filter-btn[data-filter="${key}"]`);
+          if (btn) placeFilterMenu(btn);
+        }
+      }
+      function paintDash() {
+        DASH_COLS.forEach((col) => {
+          const sel = dashFilters[col.key];
+          if (!sel) return;
+          const all = new Set(uniqueValues(col.key));
+          const next = new Set([...sel].filter((v) => all.has(v)));
+          dashFilters[col.key] = next.size === all.size ? null : next;
+        });
+        const sourceEl = $("dashSource");
+        const base = classLogs();
+        const logs = base.filter(passesFilters);
+        const avgDone = logs.length ? Math.round((logs.reduce((n, e) => n + (e.done || 0), 0) / logs.length) * 10) / 10 : 0;
+        const halfTotal = logs.reduce((n, e) => n + (e.halfErr || 0), 0);
+        const wrongTotal = logs.reduce((n, e) => n + (e.wrongErr || 0), 0);
+        const classes = [...new Set(dashAllLogs.map((s) => s.classId).filter(Boolean))].sort();
+        $("classFilter").innerHTML = `<option value="ALL">全部班別</option>` +
+          classes.map((c) => `<option value="${escapeHtml(c)}" ${c === dashClass ? "selected" : ""}>${escapeHtml(c)}</option>`).join("");
+        $("analysisCards").innerHTML = `
+          <div class="stat s1"><b>平均 3 分鐘完成題數</b><strong>${logs.length ? avgDone : "—"}</strong></div>
+          <div class="stat s2"><b>忘記除以2</b><strong>${halfTotal}</strong></div>
+          <div class="stat s3"><b>誤用不對應的高</b><strong>${wrongTotal}</strong></div>
+        `;
+        if ($("dashCount")) $("dashCount").textContent = dashAllLogs.length ? `顯示 ${logs.length} / ${base.length} 筆` : "";
+        if ($("clearFiltersBtn")) $("clearFiltersBtn").style.visibility = anyFilterOn() ? "visible" : "hidden";
+        if (!dashAllLogs.length) {
+          $("studentRecords").innerHTML = `<div class="empty">${sourceEl && sourceEl.textContent.indexOf("未能") >= 0 ? "未能連線 Google 試算表" : "未有紀錄"}</div>`;
+          return;
+        }
+        const ranked = sortLogs(logs);
+        const scores = ranked.map((e) => e.done || 0).slice().sort((a, b) => a - b);
+        const hiCut = scores.length ? scores[Math.max(0, scores.length - Math.ceil(scores.length * 0.2))] || 0 : 0;
+        const loCut = scores.length ? scores[Math.min(scores.length - 1, Math.floor(scores.length * 0.2))] || 0 : 0;
+        const showRank = dashSort.col === "score";
+        const head = (key, extra) => {
+          const spec = DASH_COLS.find((c) => c.key === key);
+          const on = filterActive(key);
+          const sorted = dashSort.col === key ? " sorted" : "";
+          return `<th class="col-h${extra || ""}${sorted}" data-col="${key}">
+            <button type="button" class="col-sort" data-sort="${key}">${escapeHtml(spec.label)}${sortMark(key)}</button>
+            <button type="button" class="filter-btn${on ? " on" : ""}" data-filter="${key}" aria-label="篩選${escapeHtml(spec.label)}">▼</button>
+          </th>`;
+        };
+        const body = ranked.length ? ranked.map((e, i) => {
+          const rank = dashSort.dir === "asc" ? ranked.length - i : i + 1;
+          const hi = e.done >= hiCut && e.done > 0;
+          const lo = e.done <= loCut;
+          return `<tr class="${hi ? "hi" : lo ? "lo" : ""}">
+            ${showRank ? `<td class="rank-cell">${rank}</td>` : ""}
+            <td>${escapeHtml(e.classId)} ${escapeHtml(e.studentId)}</td>
+            <td class="score-cell">${e.done}</td>
+            <td>${e.avgSec || "—"}</td>
+            <td class="diag-cell">${escapeHtml(e.diagnosis)}</td>
+            <td>${escapeHtml(e.time)}</td>
+          </tr>`;
+        }).join("") : `<tr><td colspan="${showRank ? 6 : 5}" class="empty">此篩選沒有紀錄，可再按 ▼ 更改篩選</td></tr>`;
+        $("studentRecords").innerHTML = `<table>
+          <thead><tr>
+            ${showRank ? `<th class="score-h">名次</th>` : ""}
+            ${head("student")}
+            ${head("score", " score-h")}
+            ${head("avg")}
+            ${head("diagnosis")}
+            ${head("time")}
+          </tr></thead>
+          <tbody>${body}</tbody>
+        </table>`;
+      }
+      function bestPerStudent(logs) {
+        const map = new Map();
+        (logs || []).forEach((e) => {
+          if (!e.studentId && !e.classId) return;
+          const key = studentKey(e.classId, e.studentId);
+          const prev = map.get(key);
+          const better = !prev
+            || (e.done || 0) > (prev.done || 0)
+            || ((e.done || 0) === (prev.done || 0) && (e.avgSec || 99999) < (prev.avgSec || 99999));
+          if (better) map.set(key, e);
+        });
+        return [...map.values()]
+          .filter((e) => (e.done || 0) > 0)
+          .sort((a, b) => {
+            if ((b.done || 0) !== (a.done || 0)) return (b.done || 0) - (a.done || 0);
+            const ta = a.avgSec || 99999, tb = b.avgSec || 99999;
+            if (ta !== tb) return ta - tb;
+            return cmpStudent(a, b);
+          })
+          .slice(0, 10);
+      }
+      async function renderRank(force) {
+        const seq = ++rankSeq;
+        const box = $("rankRecords");
+        if (!box) return;
+        box.innerHTML = `<div class="empty">載入排行榜…</div>`;
+        let logs = [];
+        let fail = false;
+        try { logs = await loadSheetLogs(!!force); }
+        catch (err) { fail = true; }
+        if (seq !== rankSeq) return;
+        if (fail) {
+          box.innerHTML = `<div class="empty">未能連線</div>`;
+          return;
+        }
+        const top = bestPerStudent(logs);
+        if (!top.length) {
+          box.innerHTML = `<div class="empty">未有紀錄</div>`;
+          return;
+        }
+        const ranks = [];
+        top.forEach((e, i) => {
+          ranks.push(i > 0 && (e.done || 0) === (top[i - 1].done || 0) ? ranks[i - 1] : i + 1);
+        });
+        box.innerHTML = `<table>
+          <thead><tr>
+            <th class="score-h">名次</th>
+            <th>班別學號</th>
+            <th class="score-h">答對題數</th>
+          </tr></thead>
+          <tbody>${top.map((e, i) => {
+            const n = ranks[i];
+            const cls = n === 1 ? "r1" : n === 2 ? "r2" : n === 3 ? "r3" : "";
+            return `<tr class="${cls}">
+              <td class="rank-cell">${n}</td>
+              <td>${escapeHtml(e.classId)} ${escapeHtml(e.studentId)}</td>
+              <td class="score-cell">${e.done || 0}</td>
+            </tr>`;
+          }).join("")}</tbody>
+        </table>`;
+      }
+      async function renderDashboard(filterClass, force) {
+        const seq = ++dashSeq;
+        if (filterClass) dashClass = filterClass;
+        $("studentRecords").innerHTML = `<div class="empty">載入全班分數…</div>`;
+        $("analysisCards").innerHTML = `
+          <div class="stat s1"><b>平均 3 分鐘完成題數</b><strong>…</strong></div>
+          <div class="stat s2"><b>忘記除以2</b><strong>…</strong></div>
+          <div class="stat s3"><b>誤用不對應的高</b><strong>…</strong></div>
+        `;
+        let source = "";
+        try { dashAllLogs = await loadSheetLogs(!!force); source = "Google 試算表"; }
+        catch (err) { dashAllLogs = loadStore().logs; source = "本機（未能連線試算表）"; }
+        if (seq !== dashSeq) return;
+        if ($("dashSource")) $("dashSource").textContent = source;
+        paintDash();
+      }
+
+      const confetti = $("confetti");
+      const cfx = confetti.getContext("2d");
+      let pieces = [];
+      function resizeConfetti() { confetti.width = window.innerWidth; confetti.height = window.innerHeight; }
+      function burstConfetti(count) {
+        const colors = ["#ff7eb6", "#5cc8ff", "#ffe066", "#c9b6ff", "#7eecc8"];
+        for (let i = 0; i < count; i++) {
+          pieces.push({
+            x: confetti.width * (0.2 + Math.random() * 0.6), y: -12,
+            r: 4 + Math.random() * 6, c: colors[i % colors.length],
+            vx: -3 + Math.random() * 6, vy: 3 + Math.random() * 5,
+            rot: Math.random() * 360, vr: -8 + Math.random() * 16,
+            life: 80 + Math.random() * 40, shape: i % 3
+          });
+        }
+      }
+      (function tick() {
+        cfx.clearRect(0, 0, confetti.width, confetti.height);
+        pieces = pieces.filter((p) => p.life > 0);
+        pieces.forEach((p) => {
+          p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.rot += p.vr; p.life -= 1;
+          cfx.save(); cfx.translate(p.x, p.y); cfx.rotate(p.rot * Math.PI / 180);
+          cfx.globalAlpha = Math.max(0, p.life / 70); cfx.fillStyle = p.c;
+          if (p.shape === 0) cfx.fillRect(-p.r, -p.r / 2, p.r * 2, p.r);
+          else if (p.shape === 1) { cfx.beginPath(); cfx.arc(0, 0, p.r, 0, Math.PI * 2); cfx.fill(); }
+          else { cfx.beginPath(); cfx.moveTo(0, -p.r); cfx.lineTo(p.r, p.r); cfx.lineTo(-p.r, p.r); cfx.fill(); }
+          cfx.restore();
+        });
+        requestAnimationFrame(tick);
+      })();
+      resizeConfetti();
+      window.addEventListener("resize", () => {
+        resizeConfetti();
+        if (screens.game.classList.contains("active")) {
+          layoutCanvas();
+          draw();
+        }
+      });
+      if (window.ResizeObserver && $("board")) {
+        new ResizeObserver(() => {
+          if (!screens.game.classList.contains("active")) return;
+          if (!state.q) return;
+          layoutCanvas();
+          draw();
+        }).observe($("board"));
+      }
+
+      scene.addEventListener("pointerdown", (e) => {
+        if (!state.q || state.busy || state.ended) return;
+        const quizTap = state.q.phase === "quiz" && (state.q.qi || 0) < 2;
+        const task2Tap = state.stage === "2" && state.q.phase === 2 && !(state.q.dropSlant && state.q.dropWrong);
+        if (!quizTap && !task2Tap) return;
+        const tag = hitTag(canvasPt(e));
+        if (tag) onTagClick(tag.kind);
+      });
+      scene.addEventListener("pointermove", (e) => {
+        if (!state.q) { scene.style.cursor = "default"; return; }
+        const quizTap = state.q.phase === "quiz" && (state.q.qi || 0) < 2;
+        const task2Tap = state.stage === "2" && state.q.phase === 2 && !(state.q.dropSlant && state.q.dropWrong);
+        if (!quizTap && !task2Tap) {
+          scene.style.cursor = "default";
+          return;
+        }
+        scene.style.cursor = hitTag(canvasPt(e)) ? "pointer" : "default";
+      });
+
+      $("startBtn").addEventListener("click", startGame);
+      $("classId").addEventListener("keydown", (e) => { if (e.key === "Enter") $("studentId").focus(); });
+      $("studentId").addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
+      $("rankBtn").addEventListener("click", () => {
+        showScreen("rank");
+        renderRank(true);
+      });
+      $("rankBackBtn").addEventListener("click", () => showScreen("login"));
+      $("rankRefreshBtn").addEventListener("click", () => renderRank(true));
+      $("teacherBtn").addEventListener("click", () => {
+        $("pinModal").classList.add("show");
+        $("pinInput").value = "";
+        $("pinInput").focus();
+      });
+      $("pinCancel").addEventListener("click", () => $("pinModal").classList.remove("show"));
+      $("pinOk").addEventListener("click", () => {
+        if ($("pinInput").value === TEACHER_PIN) {
+          $("pinModal").classList.remove("show");
+          resetDashFilters();
+          showScreen("dash");
+          renderDashboard("ALL", true);
+        } else {
+          bounce($("pinInput"));
+          $("pinInput").classList.add("shake");
+          setTimeout(() => $("pinInput").classList.remove("shake"), 400);
+          $("pinInput").value = "";
+        }
+      });
+      $("pinInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("pinOk").click(); });
+      $("dashBackBtn").addEventListener("click", () => { closeFilterMenu(); showScreen("login"); });
+      $("backLoginBtn").addEventListener("click", () => {
+        if (!state.ended && (state.done > 0 || state.missHalf + state.missSlant + state.missUnit + state.missCut + state.missDrop + state.missWrong > 0)) {
+          endSession();
+          return;
+        }
+        $("studentId").value = "";
+        $("reportModal").classList.remove("show");
+        showScreen("login");
+        $("studentId").focus();
+      });
+      $("reportBackBtn").addEventListener("click", () => {
+        $("reportModal").classList.remove("show");
+        $("studentId").value = "";
+        showScreen("login");
+        $("studentId").focus();
+      });
+      $("printBtn").addEventListener("click", () => window.print());
+      $("classFilter").addEventListener("change", (e) => {
+        dashClass = e.target.value || "ALL";
+        closeFilterMenu();
+        paintDash();
+      });
+      $("clearFiltersBtn").addEventListener("click", () => {
+        dashFilters = {};
+        closeFilterMenu();
+        paintDash();
+      });
+      $("studentRecords").addEventListener("click", (e) => {
+        const fb = e.target.closest(".filter-btn");
+        if (fb) {
+          e.stopPropagation();
+          const key = fb.getAttribute("data-filter");
+          if (dashMenuCol === key && $("dashFilterMenu").classList.contains("show")) closeFilterMenu();
+          else openFilterMenu(key, fb);
+          return;
+        }
+        const sb = e.target.closest(".col-sort");
+        if (!sb) return;
+        const key = sb.getAttribute("data-sort");
+        if (dashSort.col === key) dashSort.dir = dashSort.dir === "desc" ? "asc" : "desc";
+        else dashSort = { col: key, dir: (key === "student" || key === "diagnosis") ? "asc" : "desc" };
+        paintDash();
+      });
+      $("dashFilterMenu").addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-fm]");
+        if (!btn || !dashMenuCol) return;
+        const act = btn.getAttribute("data-fm");
+        const key = dashMenuCol;
+        if (act === "sort-desc") { dashSort = { col: key, dir: "desc" }; paintDash(); }
+        else if (act === "sort-asc") { dashSort = { col: key, dir: "asc" }; paintDash(); }
+        else if (act === "all" || act === "clear") setColFilter(key, null);
+        else if (act === "none") setColFilter(key, new Set());
+        if (act === "sort-desc" || act === "sort-asc") {
+          const anchor = document.querySelector(`.filter-btn[data-filter="${key}"]`);
+          if (anchor) placeFilterMenu(anchor);
+        }
+      });
+      $("dashFilterMenu").addEventListener("change", (e) => {
+        const inp = e.target;
+        if (!inp.matches || !inp.matches("input[type='checkbox'][data-idx]")) return;
+        const key = dashMenuCol;
+        const values = uniqueValues(key);
+        const val = values[Number(inp.getAttribute("data-idx"))];
+        if (val == null) return;
+        const sel = dashFilters[key] ? new Set(dashFilters[key]) : new Set(values);
+        if (inp.checked) sel.add(val); else sel.delete(val);
+        setColFilter(key, sel);
+      });
+      $("dashFilterMenu").addEventListener("input", (e) => {
+        if (e.target.id !== "fmSearch" || !dashMenuCol) return;
+        renderFilterMenu(dashMenuCol, e.target.value);
+        const btn = document.querySelector(`.filter-btn[data-filter="${dashMenuCol}"]`);
+        if (btn) placeFilterMenu(btn);
+      });
+      document.addEventListener("click", (e) => {
+        const menu = $("dashFilterMenu");
+        if (!menu || !menu.classList.contains("show")) return;
+        if (menu.contains(e.target) || e.target.closest(".filter-btn")) return;
+        closeFilterMenu();
+      });
+      $("refreshDashBtn").addEventListener("click", () => renderDashboard($("classFilter").value || "ALL", true));
+      $("btnCut").addEventListener("click", doCut);
+      $("btnSpin").addEventListener("click", doSpin);
+      $("phase2Acts").addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-kind]");
+        if (!btn) return;
+        const kind = btn.getAttribute("data-kind");
+        if (state.q && state.q.phase === "quiz") pickConcept(kind);
+        else pickArea(kind);
+      });
+    })();
+  </script>
+</body>
+</html>
