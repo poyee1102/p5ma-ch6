@@ -223,6 +223,7 @@
     .stat { border-radius: 16px; padding: 10px; }
     .stat b { display: block; font-size: 12px; opacity: 0.8; }
     .stat strong { font-size: clamp(16px, 2.6vh, 24px); display: block; line-height: 1.2; }
+    .stat .miss3 { font-size: 13px; font-weight: 800; line-height: 1.45; }
     .s1 { background: #d9f8ee; } .s2 { background: #ffe1ea; } .s3 { background: #efe6ff; }
     .tools { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 8px; flex-wrap: wrap; }
     .tools select, .tools button.tiny { border: 2px solid #ffe1ec; border-radius: 12px; padding: 4px 8px; font-weight: 800; background: #fff; }
@@ -279,6 +280,7 @@
     canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
 
     @media (max-height: 720px) {
+      .stat .miss3 { font-size: 12px; line-height: 1.35; }
       .mascot { width: 56px; height: 56px; font-size: 26px; }
       .mascot svg { width: 34px; }
       .teacher-btn, .login-acts .teacher-btn { width: 52px; height: 52px; min-width: 52px; flex-basis: 52px; font-size: 12px; }
@@ -1843,6 +1845,85 @@
           if (btn) placeFilterMenu(btn);
         }
       }
+
+      function errorItems(e) {
+        const text = String(e.diagnosis || "");
+        const items = [];
+        const re = /([^•\n；]+?)（(\d+)次）/g;
+        let m;
+        while ((m = re.exec(text))) {
+          let label = m[1].replace(/^[\s•]+/, "").trim();
+          if (!label || label === "零失誤") continue;
+          const head = label.split("：")[0].trim();
+          if (head) label = head;
+          const n = Number(m[2]) || 0;
+          if (n) items.push([label, n]);
+        }
+        return items;
+      }
+
+      function studentKeyOf(e) {
+        return `${e.classId}__${e.studentId}`;
+      }
+      function errorTotal(e) {
+        return errorItems(e).reduce((n, it) => n + (it[1] || 0), 0);
+      }
+      function isRealAttempt(e) {
+        return (e.done || 0) > 0 || errorTotal(e) > 0;
+      }
+      function latestReal(logs) {
+        const by = new Map();
+        (logs || []).forEach((e, i) => {
+          if (!isRealAttempt(e)) return;
+          const key = studentKeyOf(e);
+          const prev = by.get(key);
+          const stamp = String(e.time || "");
+          if (!prev || stamp > prev.stamp || (stamp === prev.stamp && i >= prev.i)) by.set(key, { e, stamp, i });
+        });
+        return [...by.values()].map((x) => x.e);
+      }
+      function formatAvg(n) {
+        return String(Math.round(n * 10) / 10);
+      }
+
+      function bestScore(logs) {
+        const by = new Map();
+        (logs || []).forEach((e) => {
+          if (!isRealAttempt(e)) return;
+          const key = studentKeyOf(e);
+          const prev = by.get(key);
+          if (!prev || (e.done || 0) > (prev.done || 0)) by.set(key, e);
+        });
+        return [...by.values()];
+      }
+
+      function topMisses(logs) {
+        const counts = new Map();
+        (logs || []).forEach((e) => {
+          errorItems(e).forEach(([label, n]) => {
+            if (!label || !n || label === "零失誤") return;
+            counts.set(label, (counts.get(label) || 0) + n);
+          });
+        });
+        return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "zh")).slice(0, 3);
+      }
+      function topMissHtml(logs) {
+        const top = topMisses(logs);
+        if (!top.length) return "零失誤";
+        return top.map(([label, n]) => `• ${escapeHtml(label)}（${n}次）`).join("<br>");
+      }
+
+      function dashCardsHtml(logs) {
+        const scored = bestScore(logs);
+        const recent = latestReal(logs);
+        const doneText = scored.length ? formatAvg(scored.reduce((n, e) => n + (e.done || 0), 0) / scored.length) : "—";
+        const errText = recent.length ? formatAvg(recent.reduce((n, e) => n + errorTotal(e), 0) / recent.length) : "—";
+        const missText = recent.length ? topMissHtml(recent) : "—";
+        return `
+          <div class="stat s1"><b>平均 3 分鐘完成題數</b><strong>${doneText}</strong></div>
+          <div class="stat s2"><b>平均錯處次數</b><strong>${errText}</strong></div>
+          <div class="stat s3 errs"><b>三大主要錯處</b><div class="miss3">${missText}</div></div>`;
+      }
       function paintDash() {
         DASH_COLS.forEach((col) => {
           const sel = dashFilters[col.key];
@@ -1854,17 +1935,10 @@
         const sourceEl = $("dashSource");
         const base = classLogs();
         const logs = base.filter(passesFilters);
-        const avgDone = logs.length ? Math.round((logs.reduce((n, e) => n + (e.done || 0), 0) / logs.length) * 10) / 10 : 0;
-        const halfTotal = logs.reduce((n, e) => n + (e.halfErr || 0), 0);
-        const wrongTotal = logs.reduce((n, e) => n + (e.wrongErr || 0), 0);
         const classes = [...new Set(dashAllLogs.map((s) => s.classId).filter(Boolean))].sort();
         $("classFilter").innerHTML = `<option value="ALL">全部班別</option>` +
           classes.map((c) => `<option value="${escapeHtml(c)}" ${c === dashClass ? "selected" : ""}>${escapeHtml(c)}</option>`).join("");
-        $("analysisCards").innerHTML = `
-          <div class="stat s1"><b>平均 3 分鐘完成題數</b><strong>${logs.length ? avgDone : "—"}</strong></div>
-          <div class="stat s2"><b>忘記除以2</b><strong>${halfTotal}</strong></div>
-          <div class="stat s3"><b>誤用不對應的高</b><strong>${wrongTotal}</strong></div>
-        `;
+        $("analysisCards").innerHTML = dashCardsHtml(logs);
         if ($("dashCount")) $("dashCount").textContent = dashAllLogs.length ? `顯示 ${logs.length} / ${base.length} 筆` : "";
         if ($("clearFiltersBtn")) $("clearFiltersBtn").style.visibility = anyFilterOn() ? "visible" : "hidden";
         if (!dashAllLogs.length) {
@@ -1977,9 +2051,8 @@
         $("studentRecords").innerHTML = `<div class="empty">載入全班分數…</div>`;
         $("analysisCards").innerHTML = `
           <div class="stat s1"><b>平均 3 分鐘完成題數</b><strong>…</strong></div>
-          <div class="stat s2"><b>忘記除以2</b><strong>…</strong></div>
-          <div class="stat s3"><b>誤用不對應的高</b><strong>…</strong></div>
-        `;
+          <div class="stat s2"><b>平均錯處次數</b><strong>…</strong></div>
+          <div class="stat s3 errs"><b>三大主要錯處</b><div class="miss3">…</div></div>`;
         let source = "";
         try { dashAllLogs = await loadSheetLogs(!!force); source = "Google 試算表"; }
         catch (err) { dashAllLogs = loadStore().logs; source = "本機（未能連線試算表）"; }
