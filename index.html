@@ -2184,7 +2184,7 @@
           $("pinModal").classList.remove("show");
           resetDashFilters();
           showScreen("dash");
-          renderDashboard("ALL", true);
+          renderDashboard("ALL");
       });
       $("pinInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("pinOk").click(); });
       $("dashBackBtn").addEventListener("click", () => { closeFilterMenu(); showScreen("login"); });
